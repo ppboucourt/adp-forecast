@@ -41,6 +41,18 @@ class ForecastCommandTest {
   }
 
   @Test
+  void baselineOptionChangesWhatTheExplainSkillIsMeasuredAgainst() {
+    var lines = run("--explain", "--baseline", "ma").out().lines().toList();
+
+    assertThat(lines)
+        .anyMatch(
+            l ->
+                l.matches(
+                    "  backtest MAE \\d+K \\| skill vs MA\\(3\\) [+-]\\d\\.\\d{2} \\| n=\\d+"))
+        .noneMatch(l -> l.contains("skill vs naive"));
+  }
+
+  @Test
   void unknownNamesListTheValidOnes() {
     var model = run("--model", "prophet");
     var window = run("--window", "rolling");

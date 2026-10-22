@@ -7,7 +7,7 @@ import java.util.OptionalDouble;
  * {@code 1 − MAE_model / MAE_baseline}: positive means the model beats the baseline. The baseline
  * is whatever the backtester was given (naive by default). Undefined when the baseline is perfect.
  */
-public class SkillVsNaive implements AccuracyMetric {
+public class SkillVsBaseline implements AccuracyMetric {
 
   @Override
   public String name() {

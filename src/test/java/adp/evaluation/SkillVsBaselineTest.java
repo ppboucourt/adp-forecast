@@ -7,9 +7,9 @@ import static org.assertj.core.api.Assertions.within;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
-class SkillVsNaiveTest {
+class SkillVsBaselineTest {
 
-  final SkillVsNaive skill = new SkillVsNaive();
+  final SkillVsBaseline skill = new SkillVsBaseline();
 
   @Test
   void isOneMinusModelMaeOverBaselineMae() {

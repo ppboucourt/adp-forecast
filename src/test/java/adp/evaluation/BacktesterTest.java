@@ -24,7 +24,8 @@ class BacktesterTest {
 
   static final ReferenceMonth START = ReferenceMonth.of(2015, 1);
   static final NamedWindow ALL = new NamedWindow("all", new AllHistory());
-  static final List<AccuracyMetric> METRICS = List.of(new MeanAbsoluteError(), new SkillVsNaive());
+  static final List<AccuracyMetric> METRICS =
+      List.of(new MeanAbsoluteError(), new SkillVsBaseline());
 
   static List<Long> noisySeries(int length, long seed) {
     var random = new Random(seed);
@@ -111,7 +112,7 @@ class BacktesterTest {
   }
 
   @Test
-  void naiveSkillVsNaiveIsZero() {
+  void naiveSkillVsBaselineIsZero() {
     var history = Releases.monthly(START, noisySeries(40, 4), 7_000);
 
     var report =

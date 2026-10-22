@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /** Settings under {@code adp.*}. */
 @ConfigurationProperties("adp")
-public record AdpProperties(Csv csv, Fred fred, Ar ar, Ma ma, Rolling rolling) {
+public record AdpProperties(Csv csv, Fred fred, Ar ar, Ma ma) {
 
   /**
    * @param path snapshot file read by the csv source
@@ -29,9 +29,4 @@ public record AdpProperties(Csv csv, Fred fred, Ar ar, Ma ma, Rolling rolling) {
    * @param window number of recent changes averaged; fixed up front, never tuned on the backtest
    */
   public record Ma(int window) {}
-
-  /**
-   * @param months length of the rolling fit window; fixed up front, never tuned on the backtest
-   */
-  public record Rolling(int months) {}
 }

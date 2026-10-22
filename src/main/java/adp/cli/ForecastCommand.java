@@ -48,6 +48,12 @@ public class ForecastCommand implements Callable<Integer> {
   @Option(names = "--explain", description = "Show how the forecast was built and its accuracy.")
   boolean explain;
 
+  @Option(
+      names = "--baseline",
+      paramLabel = "<name>",
+      description = "Model the --explain skill is measured against. Default: adp.baseline (naive).")
+  String baseline;
+
   private final PrintRepository repository;
   private final Map<String, Forecaster> forecasters;
   private final Map<String, HistoryWindow> windows;
@@ -75,7 +81,9 @@ public class ForecastCommand implements Callable<Integer> {
     var cli = spec.commandLine();
     Forecaster forecaster = Names.pick(forecasters, model, "model", cli);
     HistoryWindow fitWindow = Names.pick(windows, window, "window", cli);
-    Forecaster baseline = Names.pick(forecasters, baselineName, "model", cli);
+    Forecaster baselineModel =
+        Names.pick(forecasters, baseline == null ? baselineName : baseline, "model", cli);
+    HistoryWindow scoreAll = Names.pick(windows, "all", "window", cli);
     PrintHistory history = StoredHistory.load(repository, clock, cli.getErr());
 
     var forecast = forecaster.forecast(fitWindow.apply(history));
@@ -84,8 +92,8 @@ public class ForecastCommand implements Callable<Integer> {
     if (explain) {
       TextRenderer.explanation(forecast).forEach(out::println);
       var report =
-          new Backtester(forecaster, baseline, new NamedWindow(window, fitWindow), metrics)
-              .run(history, Basis.REAL_TIME, new NamedWindow("all", h -> h));
+          new Backtester(forecaster, baselineModel, new NamedWindow(window, fitWindow), metrics)
+              .run(history, Basis.REAL_TIME, new NamedWindow("all", scoreAll));
       TextRenderer.trust(report).forEach(out::println);
     }
     return ExitCode.OK;

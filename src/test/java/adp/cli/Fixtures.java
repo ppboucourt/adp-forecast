@@ -4,7 +4,7 @@ import adp.domain.MonthRange;
 import adp.domain.ReferenceMonth;
 import adp.evaluation.AccuracyMetric;
 import adp.evaluation.MeanAbsoluteError;
-import adp.evaluation.SkillVsNaive;
+import adp.evaluation.SkillVsBaseline;
 import adp.forecast.AllHistory;
 import adp.forecast.AutoregressiveForecaster;
 import adp.forecast.Excluding;
@@ -38,7 +38,8 @@ final class Fixtures {
           new AllHistory(),
           "exclude-covid",
           new Excluding(new MonthRange(ReferenceMonth.of(2020, 3), ReferenceMonth.of(2021, 12))));
-  static final List<AccuracyMetric> METRICS = List.of(new MeanAbsoluteError(), new SkillVsNaive());
+  static final List<AccuracyMetric> METRICS =
+      List.of(new MeanAbsoluteError(), new SkillVsBaseline());
 
   private Fixtures() {}
 

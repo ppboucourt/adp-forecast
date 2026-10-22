@@ -66,8 +66,8 @@ can't live on a single month; `PrintHistory` owns it and `vintagesOf` covers the
 **Backtest consequence:**
 
 - **Headline:** real-time first-print backtest, targets Sep 2022 onward (**49** to Sep 2026, confirmed on the
-  live API in P6), no look-ahead. The README states that its MAE carries about ±15%
-  sampling noise.
+  live API in P6), no look-ahead. One standard error of its MAE is 10–13% (measured in P8; estimated at
+  ±15% earlier), stated in the README.
 - **Secondary, labelled biased:** latest-vintage backtest over 2011–2026 (revised, benchmarked data is both
   the fit and the truth). Used for the window sensitivity check and the COVID scoring question, since the
   real-time test window contains no COVID months.
@@ -178,7 +178,7 @@ have a change, so it never pairs months across the gap; Feb – Apr 2022 drop ou
 ```
 domain/      ReferenceMonth, MonthRange, JobsChange, Observation, PrintHistory, Forecast, Explanation   (no I/O, no libs)
 forecast/    Forecaster, NaiveForecaster, AutoregressiveForecaster, HistoryWindow + impls
-evaluation/  Backtester, BacktestReport, ScoredMonth, Basis, NamedWindow, AccuracyMetric, MeanAbsoluteError, SkillVsNaive
+evaluation/  Backtester, BacktestReport, ScoredMonth, Basis, NamedWindow, AccuracyMetric, MeanAbsoluteError, SkillVsBaseline
 port/        PrintSource, PrintRepository, SnapshotWriter       (interfaces owned by the core)
 adapter/     CsvSource, CsvSnapshotWriter, FredSource, JdbcPrintRepository   (all I/O)
 cli/         picocli commands: history, forecast, backtest, sync + text rendering

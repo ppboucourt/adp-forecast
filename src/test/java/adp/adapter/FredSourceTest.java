@@ -17,7 +17,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Serves a FRED-shaped response from a local server; no network. */
+/**
+ * Serves a real FRED response from a local server; no network. The fixture was recorded on
+ * 2026-10-22 and trimmed to every vintage of 2010-01 and 2026-07 to 2026-09.
+ */
 class FredSourceTest {
 
   HttpServer server;
@@ -52,15 +55,35 @@ class FredSourceTest {
   }
 
   @Test
-  void mapsRealtimeStartToVintageAndSkipsMissingValues() {
+  void mapsEveryRealTimePeriodToAnObservationDatedByItsRealtimeStart() {
     var observations = source("secret").fetch();
 
     assertThat(observations)
+        .hasSize(13)
+        .startsWith(
+            new Observation(ReferenceMonth.of(2010, 1), LocalDate.of(2022, 8, 31), 97_609_000))
+        .contains(
+            // FRED formats most levels with a ".0" suffix.
+            new Observation(ReferenceMonth.of(2010, 1), LocalDate.of(2024, 1, 31), 104_010_000),
+            new Observation(ReferenceMonth.of(2026, 7), LocalDate.of(2026, 9, 2), 132_765_000))
+        .endsWith(
+            new Observation(ReferenceMonth.of(2026, 9), LocalDate.of(2026, 9, 30), 132_889_000));
+  }
+
+  @Test
+  void skipsFredsMissingValueMarker() {
+    body =
+        """
+        {"observations": [
+          {"realtime_start": "2022-08-31", "date": "2022-07-01", "value": "131900000.0"},
+          {"realtime_start": "2022-11-02", "date": "2022-10-01", "value": "."}
+        ]}
+        """
+            .getBytes(StandardCharsets.UTF_8);
+
+    assertThat(source("secret").fetch())
         .containsExactly(
-            new Observation(ReferenceMonth.of(2022, 7), LocalDate.of(2022, 8, 31), 131_900_000),
-            new Observation(ReferenceMonth.of(2022, 8), LocalDate.of(2022, 8, 31), 132_032_000),
-            new Observation(ReferenceMonth.of(2022, 8), LocalDate.of(2022, 10, 5), 132_050_000),
-            new Observation(ReferenceMonth.of(2022, 9), LocalDate.of(2022, 10, 5), 132_258_000));
+            new Observation(ReferenceMonth.of(2022, 7), LocalDate.of(2022, 8, 31), 131_900_000));
   }
 
   @Test

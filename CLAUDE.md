@@ -8,7 +8,10 @@ one, stop and say so instead of working around it.
 - Ports and adapters. Dependencies point inward: `cli`, `adapter`, `config` → `evaluation`, `forecast` → `domain`.
 - **No Spring annotations or imports in `domain/`, `forecast/`, `evaluation/`, `port/`.** Plain Java, constructor
   injection only. Spring lives in `config/`, `adapter/`, `cli/`.
-- Concrete classes are chosen only in `config/` (`@Bean` methods).
+- Concrete classes are chosen only in `config/` (`@Bean` methods). Exception: commands assemble a
+  `Backtester` and `NamedWindow`s at runtime from plug-ins picked by name; which implementations exist is
+  still decided only in `config/`.
+- `ArchitectureTest` enforces the dependency direction, Spring-free core and JDK-only domain.
 - `domain/` has no I/O and no third-party libraries.
 - Value objects are Java records, validated in the compact constructor.
 - Stored data is raw vintages (levels). Changes, first prints and revisions are derived in the domain.
@@ -23,7 +26,7 @@ one, stop and say so instead of working around it.
 | Data sources | Adapter | `PrintSource` → `CsvSource`, `FredSource`; `SnapshotWriter` → `CsvSnapshotWriter` (one shared `CsvFormat`) | Caching decorator |
 | Forecasting | Strategy | `Forecaster` → `NaiveForecaster`, `AutoregressiveForecaster`, `MovingAverageForecaster` | Ensemble / Composite |
 | Windows | Strategy + composition | `HistoryWindow` → `AllHistory`, `Excluding`, `Rolling`; `andThen()` | Specification pattern |
-| Evaluation | Strategy + composition | `AccuracyMetric` → `MeanAbsoluteError`, `SkillVsNaive`; `Backtester(model, baseline, fitWindow, metrics)`; latest-vintage basis via `PrintHistory.latestOnly()` | Template Method backtester |
+| Evaluation | Strategy + composition | `AccuracyMetric` → `MeanAbsoluteError`, `SkillVsBaseline`; `Backtester(model, baseline, fitWindow, metrics)`; latest-vintage basis via `PrintHistory.latestOnly()` | Template Method backtester |
 | CLI | Command | picocli subcommands | Renderer interface (one format) |
 | Wiring | DI container | Spring `@Configuration` at the edges | Annotations in the core |
 | Architecture rules | Fitness function (test) | `ArchitectureTest` (ArchUnit) | Checkstyle import rules |

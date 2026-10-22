@@ -2,7 +2,7 @@ package adp.config;
 
 import adp.evaluation.AccuracyMetric;
 import adp.evaluation.MeanAbsoluteError;
-import adp.evaluation.SkillVsNaive;
+import adp.evaluation.SkillVsBaseline;
 import java.time.Clock;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,8 +20,8 @@ public class EvaluationConfig {
 
   @Bean
   @Order(2)
-  AccuracyMetric skillVsNaive() {
-    return new SkillVsNaive();
+  AccuracyMetric skillVsBaseline() {
+    return new SkillVsBaseline();
   }
 
   @Bean

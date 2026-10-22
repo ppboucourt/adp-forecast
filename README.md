@@ -10,7 +10,8 @@ forecasts the next print. It answers three questions:
    model's measured accuracy against first prints.
 
 Design decisions and their reasons are in [`docs/DESIGN.md`](docs/DESIGN.md). The AI-assisted build is
-documented in [`docs/PROMPTS-PLAN.md`](docs/PROMPTS-PLAN.md) and [`CLAUDE.md`](CLAUDE.md).
+documented in [`PROMPTS.md`](PROMPTS.md) (each prompt as sent and what was used, edited or rejected),
+[`docs/PROMPTS-PLAN.md`](docs/PROMPTS-PLAN.md) and [`CLAUDE.md`](CLAUDE.md).
 
 ## Quick start
 
@@ -42,7 +43,7 @@ first prints over `n` months, and skill relative to the naive "same as last mont
 | Command | What it does |
 |---|---|
 | `history [--last N] [--first-print]` | Recent months: level and change; optionally first print and revision |
-| `forecast [--model ar\|naive\|ma] [--window all\|exclude-covid\|rolling-60] [--explain]` | Next month's forecast; defaults `ar`, `exclude-covid` |
+| `forecast [--model ar\|naive\|ma] [--window all\|exclude-covid\|rolling-60] [--explain] [--baseline …]` | Next month's forecast; defaults `ar`, `exclude-covid`; `--baseline` sets what the `--explain` skill is measured against |
 | `backtest [--model …] [--baseline …] [--window …]… [--score …] [--basis real-time\|latest-vintage]` | Accuracy table, one row per fit window, all scored on the same months; skill is vs. `--baseline` (default `naive`) |
 | `sync [--source csv\|fred] [--export path]` | Load vintages into the local database (never overwrites a stored vintage) |
 
@@ -106,8 +107,9 @@ A **walk-forward backtest**. For each target month M:
   of them couldn't forecast are counted as skipped.
 - **Metrics:** mean absolute error (MAE, thousands of jobs) and skill = `1 − MAE_model / MAE_naive`
   (positive = better than naive).
-- **Sampling noise:** with 49 months, an MAE carries roughly ±15% sampling noise, so small differences
-  between models or windows are not evidence of anything.
+- **Sampling noise:** with 49 months, one standard error of an MAE is 10–13% of its value (measured on
+  the backtest errors: AR 7.7K on 61.6K, naive 7.0K on 66.2K, MA 7.4K on 59.1K), so a 95% interval is about
+  ±21–25%. Small differences between models or windows are not evidence of anything.
 - **Secondary backtest (biased):** the same loop on the latest revised values, Feb 2010 – Sep 2026. It has
   ~4× more months and includes COVID, but both the fit and the "truth" are revised data, so it is used
   only for sensitivity checks, never as the headline.
@@ -119,7 +121,9 @@ Fixed before the backtest was run, so the results can't be read to fit them:
 1. **The default window stays `exclude-covid` whatever the results show.** It was chosen on domain grounds;
    switching to whichever window scored better would be model selection on the test set.
 2. **Differences inside the noise band count as no difference:** an MAE gap under ~15% or a skill gap under
-   ~0.1 is reported as "no measurable difference", not as a win.
+   ~0.1 is reported as "no measurable difference", not as a win. (The 15% was an estimate when this rule
+   was fixed; measured afterwards, one standard error is 10–13%, so the band is about 1.2–1.5 standard
+   errors of a single MAE. The rule was kept as registered.)
 3. **AR vs. naive:** if AR wins with near-zero weights, it is only exploiting the mean; if it wins with
    meaningful weights, report it with `n` and the noise caveat; if it doesn't win, say so — the tool then
    tells users itself (`--explain` prints a note when skill ≤ 0).

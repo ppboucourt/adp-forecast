@@ -46,8 +46,11 @@ public class ForecastConfig {
     return new Excluding(COVID);
   }
 
-  @Bean("rolling-60")
-  HistoryWindow rolling(AdpProperties properties) {
-    return new Rolling(properties.rolling().months());
+  /** Fixed before any backtest ran; kept beside the bean name so the two can't drift apart. */
+  static final int ROLLING_MONTHS = 60;
+
+  @Bean("rolling-" + ROLLING_MONTHS)
+  HistoryWindow rolling() {
+    return new Rolling(ROLLING_MONTHS);
   }
 }
