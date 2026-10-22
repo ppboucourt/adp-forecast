@@ -17,9 +17,15 @@ import java.util.TreeMap;
 public final class PrintHistory {
 
   private final NavigableMap<ReferenceMonth, NavigableMap<LocalDate, Long>> trails;
+  private final boolean latestOnly;
 
   public PrintHistory(Collection<Observation> observations) {
+    this(observations, false);
+  }
+
+  private PrintHistory(Collection<Observation> observations, boolean latestOnly) {
     Objects.requireNonNull(observations, "observations");
+    this.latestOnly = latestOnly;
     var byMonth = new TreeMap<ReferenceMonth, NavigableMap<LocalDate, Long>>();
     for (Observation o : observations) {
       var trail = byMonth.computeIfAbsent(o.month(), m -> new TreeMap<>());
@@ -42,7 +48,8 @@ public final class PrintHistory {
                 e ->
                     e.getValue().headMap(date, true).entrySet().stream()
                         .map(v -> new Observation(e.getKey(), v.getKey(), v.getValue())))
-            .toList());
+            .toList(),
+        latestOnly);
   }
 
   /** The history without any vintage of the months in {@code range}. */
@@ -55,7 +62,28 @@ public final class PrintHistory {
                 e ->
                     e.getValue().entrySet().stream()
                         .map(v -> new Observation(e.getKey(), v.getKey(), v.getValue())))
-            .toList());
+            .toList(),
+        latestOnly);
+  }
+
+  /**
+   * Every month's latest level as its only vintage, stamped with a <b>synthetic</b> release date:
+   * the first day of the following month. Not real publication dates (backcast months share one
+   * real vintage); used only for the latest-vintage backtest, whose fit and truth are both revised
+   * data and therefore biased. The result reports {@link #isLatestOnly()}, as do views derived from
+   * it.
+   */
+  public PrintHistory latestOnly() {
+    return new PrintHistory(
+        latest().entrySet().stream()
+            .map(e -> new Observation(e.getKey(), e.getKey().next().firstDay(), e.getValue()))
+            .toList(),
+        true);
+  }
+
+  /** True for {@link #latestOnly()} and views derived from it. */
+  public boolean isLatestOnly() {
+    return latestOnly;
   }
 
   /** Latest level of every month, in month order. */

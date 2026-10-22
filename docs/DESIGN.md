@@ -124,6 +124,24 @@ with M's **first print**.
   report how many were skipped. After an excluded window, AR cannot forecast the first p months while naive
   can; scoring them for naive alone would make the two MAEs incomparable.
 
+**Backtest mechanics (P4):**
+
+- One `Backtester(model, baseline, fitWindow, metrics)`; the baseline is injected (naive by default). Each
+  scored month is a row `(target, firstPrint, modelPoint, baselinePoint)`; `AccuracyMetric` computes over rows.
+- **Targets:** M is a target if, the day before M's first release, the latest month held is M−1. Months first
+  published together (the 2022 relaunch backcast) are never targets, so they don't count as skipped. A
+  forecast for any month other than M is an error.
+- **Basis:** `REAL_TIME` (headline) runs on real vintages and rejects a `latestOnly()` history.
+  `LATEST_VINTAGE` (secondary, biased) runs the same loop on `PrintHistory.latestOnly()`: each month's latest
+  level stamped with a *synthetic* release date (1st of the following month).
+- **Windows are independent.** In a comparison table the scoring window is fixed and only the fit window
+  varies, and every cell is scored on the same months: those every cell's model and baseline forecast. A
+  cell whose fit window removed the month before the target can't forecast it. Each report line shows `n`
+  (scored months) next to MAE and skill, plus the skipped count.
+- **Consequence for the 2×2:** `fit=exclude-covid` cannot forecast COVID-period targets, so in a table that
+  includes it those months drop out for every cell (visible in the skipped count). The COVID scoring question
+  is answered by the `fit=all` row under both scoring windows.
+
 **Correction recorded:** the backtest *evaluates*; it does not train. The model fits itself (OLS) inside each
 `forecast()` call. Using backtest scores to pick `p` or a window would be model selection and would bias the
 reported score.
@@ -153,7 +171,7 @@ have a change, so it never pairs months across the gap; Feb – Apr 2022 drop ou
 ```
 domain/      ReferenceMonth, MonthRange, JobsChange, Observation, PrintHistory, Forecast, Explanation   (no I/O, no libs)
 forecast/    Forecaster, NaiveForecaster, AutoregressiveForecaster, HistoryWindow + impls
-evaluation/  Backtester, BacktestReport, AccuracyMetric, MeanAbsoluteError, SkillVsNaive
+evaluation/  Backtester, BacktestReport, ScoredMonth, Basis, NamedWindow, AccuracyMetric, MeanAbsoluteError, SkillVsNaive
 port/        PrintSource, PrintRepository, SnapshotWriter       (interfaces owned by the core)
 adapter/     CsvSource, CsvSnapshotWriter, FredSource, JdbcPrintRepository   (all I/O)
 cli/         picocli commands: history, forecast, backtest, sync + text rendering

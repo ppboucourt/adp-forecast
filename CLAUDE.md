@@ -23,7 +23,7 @@ one, stop and say so instead of working around it.
 | Data sources | Adapter | `PrintSource` → `CsvSource`, `FredSource`; `SnapshotWriter` → `CsvSnapshotWriter` (one shared `CsvFormat`) | Caching decorator |
 | Forecasting | Strategy | `Forecaster` → `NaiveForecaster`, `AutoregressiveForecaster` | Ensemble / Composite |
 | Windows | Strategy + composition | `HistoryWindow.andThen()` | Specification pattern |
-| Evaluation | Strategy | `AccuracyMetric` → `MeanAbsoluteError`, `SkillVsNaive` | Template Method backtester |
+| Evaluation | Strategy + composition | `AccuracyMetric` → `MeanAbsoluteError`, `SkillVsNaive`; `Backtester(model, baseline, fitWindow, metrics)`; latest-vintage basis via `PrintHistory.latestOnly()` | Template Method backtester |
 | CLI | Command | picocli subcommands | Renderer interface (one format) |
 | Wiring | DI container | Spring `@Configuration` at the edges | Annotations in the core |
 | Architecture rules | Fitness function (test) | `ArchitectureTest` (ArchUnit) | Checkstyle import rules |
