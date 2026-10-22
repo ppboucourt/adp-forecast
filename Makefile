@@ -3,7 +3,7 @@ BUILD_IMAGE := adp-forecast-build
 VOLUME      := adp-forecast-data
 GRADLE      := ./gradlew --no-daemon
 
-# Local secrets (gitignored); see .env.example.
+# Local secrets (gitignored): a .env file with the line FRED_API_KEY=<key> (no quotes, no spaces).
 -include .env
 export FRED_API_KEY
 
