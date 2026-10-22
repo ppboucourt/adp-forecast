@@ -21,15 +21,22 @@ defending choices — not on model sophistication.
 
 ADP revises the prior month on every release. We store every published **vintage** and derive the rest.
 
-- `ReferenceMonth`, `JobsChange` — value objects (records, validated, immutable)
-- `Print` — entity identified by reference month, with its revision trail
-- `PrintHistory` — `asOf(date)` returns the point-in-time view (latest vintage ≤ date per month)
+- `ReferenceMonth`, `JobsChange`, `Observation` — value objects (records, validated, immutable).
+  `Observation` is one stored row: reference month, vintage date, level. The level is a primitive `long`, so
+  null is impossible by type; non-positive levels are rejected.
+- `PrintHistory` — immutable class over observations. A month's level at date D is its latest vintage ≤ D.
+  `asOf(date)` drops vintages published after `date`; `vintagesOf(month)` returns one month's revision trail.
 
 **Why:** "September's number" is ambiguous (first print vs. revised). Forecasts should be judged against the
 first print (what the market saw), and backtests must not see revisions published later (look-ahead bias).
 
-**Subtlety:** the first-print change for month M is `level(M) − level(M−1)` with **both levels from the same
-vintage** — the one that first published M. Mixing vintages produces a number ADP never published.
+**Subtlety:** the first-print change for month M is `level(M) − level(M−1)` with **both levels read as of the
+same vintage date V** — the one that first published M, i.e. `asOf(V)`. M−1's level is its latest vintage
+≤ V: a row dated exactly V if that release revised M−1, otherwise the earlier value carried forward (ALFRED
+records a value only when it changes). Mixing vintages produces a number ADP never published.
+
+**Cut (P1):** a `Print` entity per month. Its key behavior, the change, needs M−1 from the same vintage, so it
+can't live on a single month; `PrintHistory` owns it and `vintagesOf` covers the revision trail.
 
 ### D2 — Data source: FRED/ALFRED behind an adapter, bundled CSV by default
 
@@ -109,7 +116,7 @@ interface HistoryWindow { PrintHistory apply(PrintHistory h); default HistoryWin
 ### D7 — Architecture: ports and adapters
 
 ```
-domain/      Print, ReferenceMonth, JobsChange, PrintHistory, Forecast, Explanation   (no I/O, no libs)
+domain/      ReferenceMonth, JobsChange, Observation, PrintHistory, Forecast, Explanation   (no I/O, no libs)
 forecast/    Forecaster, NaiveForecaster, AutoregressiveForecaster, HistoryWindow + impls
 evaluation/  Backtester, BacktestReport, AccuracyMetric, MeanAbsoluteError, SkillVsNaive
 port/        PrintSource, PrintRepository                       (interfaces owned by the core)

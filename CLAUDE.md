@@ -18,7 +18,7 @@ one, stop and say so instead of working around it.
 
 | Area | Pattern | Where | Deliberately not used |
 |---|---|---|---|
-| Domain | Value Object, Entity | `ReferenceMonth`, `JobsChange` / `Print` | |
+| Domain | Value Object | `ReferenceMonth`, `JobsChange`, `Observation`; `PrintHistory.vintagesOf()` for revision trails | `Print` entity |
 | Data access | Repository (port) | `PrintRepository` → `JdbcPrintRepository` | Spring Data JPA |
 | Data sources | Adapter | `PrintSource` → `CsvSource`, `FredSource` | Caching decorator |
 | Forecasting | Strategy | `Forecaster` → `NaiveForecaster`, `AutoregressiveForecaster` | Ensemble / Composite |
@@ -26,6 +26,7 @@ one, stop and say so instead of working around it.
 | Evaluation | Strategy | `AccuracyMetric` → `MeanAbsoluteError`, `SkillVsNaive` | Template Method backtester |
 | CLI | Command | picocli subcommands | Renderer interface (one format) |
 | Wiring | DI container | Spring `@Configuration` at the edges | Annotations in the core |
+| Architecture rules | Fitness function (test) | `ArchitectureTest` (ArchUnit) | Checkstyle import rules |
 
 Don't add a pattern that isn't in this table without arguing for it first.
 
