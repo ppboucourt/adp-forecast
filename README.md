@@ -42,7 +42,7 @@ first prints over `n` months, and skill relative to the naive "same as last mont
 | Command | What it does |
 |---|---|
 | `history [--last N] [--first-print]` | Recent months: level and change; optionally first print and revision |
-| `forecast [--model ar\|naive] [--window all\|exclude-covid] [--explain]` | Next month's forecast; defaults `ar`, `exclude-covid` |
+| `forecast [--model ar\|naive\|ma] [--window all\|exclude-covid\|rolling-60] [--explain]` | Next month's forecast; defaults `ar`, `exclude-covid` |
 | `backtest [--model …] [--window …]… [--score …] [--basis real-time\|latest-vintage]` | Accuracy table, one row per fit window, all scored on the same months |
 | `sync [--source csv\|fred] [--export path]` | Load vintages into the local database (never overwrites a stored vintage) |
 
@@ -73,6 +73,8 @@ Put a free [FRED API key](https://fred.stlouisfed.org/docs/api/api_key.html) in 
 
 ## Approach and trade-offs
 
+- **Adding a plug-in is one class plus one `@Bean`.** `ma` (MA(3), equal-weighted mean of the last
+  three changes) and the `rolling-60` fit window were added this way, with no edits outside `config/`.
 - **Two models, one interface.** `naive` (next change = last change) is the baseline every score is
   measured against. `ar` is AR(3) on monthly changes, fitted by ordinary least squares on every call. Its
   forecast decomposes exactly into `intercept + Σ weight × lag`, which is the explanation. Richer models
@@ -187,6 +189,8 @@ AR's skill against it. That answers directly whether AR adds anything beyond a s
   suggest this is where accuracy would come from.
 - **Prediction intervals**, with their coverage evaluated in the same backtest.
 - **Ensemble** weighted by recent error.
+- **Constant-mean baseline**, to answer directly whether AR is more than its intercept (MA(3) answers a
+  narrower question: fitted weights vs. equal weights on the same lags).
 - **Selecting `p`** on a held-out earlier window, never on the reported one.
 - Postgres / S3 repositories, Flyway migrations, JSON output, a small web UI.
 

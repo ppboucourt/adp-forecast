@@ -258,6 +258,13 @@ JUnit 5 + AssertJ. **Cut:** mutation testing, property-based tests, Testcontaine
 - `MovingAverageForecaster` — one class + one `@Bean`, no edits elsewhere.
 - `Rolling(months)` window — same.
 
+**Done (P7):** `ma` = `MovingAverageForecaster(3)`: the same three lags AR uses, equal weights, no
+intercept, so AR vs. MA asks whether fitted weights and an intercept beat plain averaging (not whether AR
+is more than its intercept; a constant-mean baseline would answer that). `rolling-60` = `Rolling(60)`:
+the last 60 months of levels, counted from the latest month held, so it slides with the as-of date; like
+`Excluding`, it loses the change of its first kept month (59 changes). `k` and `N` were fixed before any
+backtest ran. The only edits to existing classes are in `config/` (`AdpProperties`, `ForecastConfig`).
+
 ## Next week (README material)
 
 Ensemble weighted by recent error · prediction intervals with coverage evaluation · exogenous predictors (BLS,

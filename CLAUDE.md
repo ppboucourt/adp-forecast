@@ -21,8 +21,8 @@ one, stop and say so instead of working around it.
 | Domain | Value Object | `ReferenceMonth`, `MonthRange`, `JobsChange`, `Observation`, `Forecast`, `Explanation` (sealed `Term`: `Constant`, `Weighted`); `PrintHistory.vintagesOf()` for revision trails | `Print` entity; one explanation type per model |
 | Data access | Repository (port) | `PrintRepository` → `JdbcPrintRepository` | Spring Data JPA |
 | Data sources | Adapter | `PrintSource` → `CsvSource`, `FredSource`; `SnapshotWriter` → `CsvSnapshotWriter` (one shared `CsvFormat`) | Caching decorator |
-| Forecasting | Strategy | `Forecaster` → `NaiveForecaster`, `AutoregressiveForecaster` | Ensemble / Composite |
-| Windows | Strategy + composition | `HistoryWindow.andThen()` | Specification pattern |
+| Forecasting | Strategy | `Forecaster` → `NaiveForecaster`, `AutoregressiveForecaster`, `MovingAverageForecaster` | Ensemble / Composite |
+| Windows | Strategy + composition | `HistoryWindow` → `AllHistory`, `Excluding`, `Rolling`; `andThen()` | Specification pattern |
 | Evaluation | Strategy + composition | `AccuracyMetric` → `MeanAbsoluteError`, `SkillVsNaive`; `Backtester(model, baseline, fitWindow, metrics)`; latest-vintage basis via `PrintHistory.latestOnly()` | Template Method backtester |
 | CLI | Command | picocli subcommands | Renderer interface (one format) |
 | Wiring | DI container | Spring `@Configuration` at the edges | Annotations in the core |
