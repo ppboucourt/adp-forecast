@@ -235,7 +235,7 @@ CREATE TABLE observation (
 | forecast | AR recovers known coefficients on a synthetic series; **explanation contributions sum to the forecast**; `Excluding` drops the right months |
 | evaluation | **Look-ahead guard: the model never receives data published after the as-of date**; naive skill = 0 |
 | adapter | `JdbcPrintRepository` on a temp SQLite file; `CsvSource` fixture; `FredSource` on recorded JSON (no network) |
-| cli | One `@SpringBootTest` smoke test of `forecast --explain` on the bundled snapshot |
+| cli | Commands run through picocli with fakes; one `@SpringBootTest` smoke test of `forecast --explain` on a synthetic test series (P6 adds one on the real snapshot) |
 
 JUnit 5 + AssertJ. **Cut:** mutation testing, property-based tests, Testcontainers Postgres.
 

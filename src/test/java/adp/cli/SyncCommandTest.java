@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import adp.domain.Observation;
 import adp.domain.ReferenceMonth;
-import adp.port.PrintRepository;
 import adp.port.PrintSource;
 import adp.port.SnapshotWriter;
 import java.io.PrintWriter;
@@ -13,10 +12,8 @@ import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.junit.jupiter.api.Test;
 import picocli.CommandLine;
 
@@ -27,24 +24,6 @@ class SyncCommandTest {
       List.of(
           new Observation(ReferenceMonth.of(2022, 8), LocalDate.of(2022, 8, 31), 132_032_000),
           new Observation(ReferenceMonth.of(2022, 9), LocalDate.of(2022, 10, 5), 132_258_000));
-
-  static class InMemoryRepository implements PrintRepository {
-    final Set<Observation> stored = new LinkedHashSet<>();
-
-    @Override
-    public int saveAll(Collection<Observation> observations) {
-      int added = 0;
-      for (Observation o : observations) {
-        added += stored.add(o) ? 1 : 0;
-      }
-      return added;
-    }
-
-    @Override
-    public List<Observation> findAll() {
-      return List.copyOf(stored);
-    }
-  }
 
   static class RecordingWriter implements SnapshotWriter {
     final List<Object> calls = new ArrayList<>();

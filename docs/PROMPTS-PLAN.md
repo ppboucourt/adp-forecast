@@ -177,8 +177,11 @@ Unknown model/window names list the valid ones.
 1. Is a `Renderer` interface warranted yet? (Pattern map says no.)
 2. Should `forecast` default to AR or naive, and why?
 
-**Acceptance:** One `@SpringBootTest` runs `forecast --explain` against the bundled snapshot and checks the
-output shape. `make test` and `make lint` pass.
+**Acceptance:** One `@SpringBootTest` seeds a temporary database with `sync` from a synthetic test series
+(`src/test/resources/cli/test_vintages.csv`: seeded, ~60 months, a few revisions, labelled as test data) and
+runs `forecast --explain`, checking the output shape. `make test` and `make lint` pass.
+*(Edited during P5: the bundled snapshot is still the 12-row sample, too short for AR(3); fabricated numbers
+stay out of `data/`. The real-snapshot smoke test moves to P6.)*
 
 **Out of scope:** JSON output, web UI.
 
@@ -196,6 +199,9 @@ output shape. `make test` and `make lint` pass.
 2. Does AR(3) actually beat naive? If not, say so and explain why that's still a useful finding.
 
 **Acceptance:** A fresh clone runs `make init && make run ARGS="forecast --explain"` with no API key.
+
+**Follow-up from P5:** add a second smoke test that runs `forecast --explain` against the real
+`data/adp_vintages.csv` and checks the D8 shape (shape only, so a snapshot refresh doesn't break it).
 
 ---
 
