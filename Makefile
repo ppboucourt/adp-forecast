@@ -3,11 +3,18 @@ BUILD_IMAGE := adp-forecast-build
 VOLUME      := adp-forecast-data
 GRADLE      := ./gradlew --no-daemon
 
+# Local secrets (gitignored); see .env.example.
+-include .env
+export FRED_API_KEY
+
 .PHONY: init image build-image run test lint format refresh-snapshot
 
-## Build the runtime image and create the database volume.
+## Build the image and seed the database from the committed snapshot; also sync from FRED when
+## FRED_API_KEY is set. Re-running is safe: stored vintages are never duplicated.
 init: image
 	docker volume create $(VOLUME) > /dev/null
+	$(MAKE) --no-print-directory run ARGS="sync --source csv"
+	@if [ -n "$(FRED_API_KEY)" ]; then $(MAKE) --no-print-directory run ARGS="sync --source fred"; fi
 
 image:
 	docker build -t $(IMAGE) .

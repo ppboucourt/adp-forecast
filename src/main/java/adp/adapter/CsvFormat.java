@@ -67,7 +67,15 @@ final class CsvFormat {
   }
 
   static void write(Collection<Observation> observations, Writer writer) {
+    write(observations, writer, List.of());
+  }
+
+  /** Writes each comment as a {@code #} line above the header. */
+  static void write(Collection<Observation> observations, Writer writer, List<String> comments) {
     try {
+      for (String comment : comments) {
+        writer.write("# " + comment + "\n");
+      }
       writer.write(HEADER + "\n");
       var sorted =
           observations.stream()

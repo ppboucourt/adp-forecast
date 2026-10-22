@@ -39,6 +39,23 @@ class CsvFormatTest {
   }
 
   @Test
+  void writesCommentLinesBeforeTheHeaderAndReadsPastThem() {
+    var rows = List.of(new Observation(AUG, LocalDate.of(2022, 8, 31), 132_032_000));
+    var out = new StringWriter();
+
+    CsvFormat.write(rows, out, List.of("Source: example", "Retrieved 2026-10-22"));
+
+    assertThat(out.toString())
+        .startsWith(
+            """
+            # Source: example
+            # Retrieved 2026-10-22
+            reference_month,vintage_date,level
+            """);
+    assertThat(read(out.toString())).isEqualTo(rows);
+  }
+
+  @Test
   void readsWhatItWrites() {
     var rows =
         List.of(

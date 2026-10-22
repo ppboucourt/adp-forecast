@@ -56,15 +56,17 @@ can't live on a single month; `PrintHistory` owns it and `vintagesOf` covers the
   they never had a real-time first print. The pre-2022 ADP report was a different product (a forecast of
   BLS) and is not spliced on.
 - Every February the annual QCEW reweighting restates the whole history back to 2010 (Feb 2026: level about
-  −2.5M). `asOf(V)` handles it: a January's first print reads the benchmarked December from the same vintage.
+  −2.5M). The live data (P6) shows full restatements on 2023-02-01, 2024-01-31, 2025-02-05, 2025-03-05,
+  2025-04-02 and 2026-02-04; FRED also formats some levels with a `.0` suffix, which `FredSource` accepts
+  only when the fraction is zero. `asOf(V)` handles it: a January's first print reads the benchmarked December from the same vintage.
 - API: `fred/series/observations` with `realtime_start=1776-07-04`, `realtime_end=9999-12-31` (both default
   to today), `output_type=1`. Each row's `realtime_start` is our `vintage_date`; rows appear only when a
   value changes.
 
 **Backtest consequence:**
 
-- **Headline:** real-time first-print backtest, targets Sep 2022 onward (~49 to Sep 2026; an estimate until
-  `FredSource` runs against the live API), no look-ahead. The README states that its MAE carries about ±15%
+- **Headline:** real-time first-print backtest, targets Sep 2022 onward (**49** to Sep 2026, confirmed on the
+  live API in P6), no look-ahead. The README states that its MAE carries about ±15%
   sampling noise.
 - **Secondary, labelled biased:** latest-vintage backtest over 2011–2026 (revised, benchmarked data is both
   the fit and the truth). Used for the window sensitivity check and the COVID scoring question, since the
@@ -160,6 +162,10 @@ interface HistoryWindow { PrintHistory apply(PrintHistory h); default HistoryWin
 (structural break), not because it scored best; the comparison table shows the sensitivity.
 
 **Bias–variance:** long windows give stable coefficients but mix old regimes; short windows adapt but are noisy.
+
+**Result (P6):** on the real-time backtest the two fit windows differ by 1K MAE (61K vs 62K, n=49): no
+measurable difference under the pre-registered rules, so the default stays. The windows do change AR's
+coefficients materially. See README "Results".
 
 **Gaps (P3):** windows remove *levels*, so `exclude-covid` drops Mar 2020 – Dec 2021 and the change series
 loses Mar 2020 – **Jan 2022** (Jan 2022's change needs Dec 2021's level): one ordinary month lost, accepted to

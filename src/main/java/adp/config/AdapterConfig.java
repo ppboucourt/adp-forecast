@@ -8,7 +8,10 @@ import adp.port.PrintRepository;
 import adp.port.PrintSource;
 import adp.port.SnapshotWriter;
 import java.net.http.HttpClient;
+import java.time.Clock;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.util.List;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,8 +40,19 @@ public class AdapterConfig {
     return new JdbcPrintRepository(jdbc, transactions);
   }
 
+  /** Every exported snapshot carries the citation FRED requires for this copyrighted series. */
   @Bean
-  SnapshotWriter snapshotWriter() {
-    return new CsvSnapshotWriter();
+  SnapshotWriter snapshotWriter(AdpProperties properties, Clock clock) {
+    var fred = properties.fred();
+    return new CsvSnapshotWriter(
+        List.of(
+            "Automatic Data Processing, Inc., Total Nonfarm Private Payroll Employment ["
+                + fred.seriesId()
+                + "],",
+            "retrieved from FRED, Federal Reserve Bank of St. Louis; all ALFRED vintages, "
+                + LocalDate.now(clock)
+                + ".",
+            "Copyrighted: citation required. Levels in persons, seasonally adjusted.",
+            "vintage_date is the ALFRED realtime_start: the date each value was first published."));
   }
 }

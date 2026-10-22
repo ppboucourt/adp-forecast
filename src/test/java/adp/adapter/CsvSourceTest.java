@@ -7,6 +7,7 @@ import adp.domain.Observation;
 import adp.domain.ReferenceMonth;
 import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.util.List;
@@ -36,6 +37,17 @@ class CsvSourceTest {
 
     new CsvSnapshotWriter().write(original, copy);
 
+    assertThat(new CsvSource(copy).fetch()).isEqualTo(original);
+  }
+
+  @Test
+  void snapshotWriterHeaderCommentsSurviveARoundTrip(@TempDir Path dir) throws Exception {
+    var original = new CsvSource(fixture()).fetch();
+    var copy = dir.resolve("cited.csv");
+
+    new CsvSnapshotWriter(List.of("Citation line")).write(original, copy);
+
+    assertThat(Files.readString(copy)).startsWith("# Citation line\n");
     assertThat(new CsvSource(copy).fetch()).isEqualTo(original);
   }
 

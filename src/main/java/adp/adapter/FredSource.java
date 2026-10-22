@@ -5,6 +5,7 @@ import adp.domain.ReferenceMonth;
 import adp.port.PrintSource;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -91,12 +92,23 @@ public class FredSource implements PrintSource {
       if (MISSING.equals(value)) {
         continue;
       }
+      String date = node.path("date").asString();
       result.add(
           new Observation(
-              new ReferenceMonth(YearMonth.from(LocalDate.parse(node.path("date").asString()))),
+              new ReferenceMonth(YearMonth.from(LocalDate.parse(date))),
               LocalDate.parse(node.path("realtime_start").asString()),
-              Long.parseLong(value)));
+              wholeNumber(value, date)));
     }
     return result;
+  }
+
+  /** FRED formats some levels with a decimal part ({@code 104010000.0}); it must be zero. */
+  private static long wholeNumber(String value, String date) {
+    try {
+      return new BigDecimal(value).longValueExact();
+    } catch (NumberFormatException | ArithmeticException e) {
+      throw new IllegalArgumentException(
+          "FRED value for " + date + " is not a whole number of persons: " + value, e);
+    }
   }
 }

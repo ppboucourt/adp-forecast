@@ -6,6 +6,7 @@ COPY gradle gradle
 # Resolve dependencies in their own layer so source edits don't re-download them.
 RUN ./gradlew --no-daemon --quiet dependencies > /dev/null
 COPY src src
+COPY data data
 RUN ./gradlew --no-daemon --quiet bootJar
 
 FROM eclipse-temurin:25-jre

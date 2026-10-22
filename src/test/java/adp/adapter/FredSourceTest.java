@@ -64,6 +64,22 @@ class FredSourceTest {
   }
 
   @Test
+  void rejectsAFractionalLevelWithContext() {
+    body =
+        """
+        {"observations": [
+          {"realtime_start": "2022-08-31", "date": "2022-07-01", "value": "131900000.5"}
+        ]}
+        """
+            .getBytes(StandardCharsets.UTF_8);
+
+    assertThatThrownBy(() -> source("secret").fetch())
+        .isInstanceOf(IllegalArgumentException.class)
+        .hasMessageContaining("2022-07-01")
+        .hasMessageContaining("131900000.5");
+  }
+
+  @Test
   void requestsEveryVintageByRealTimePeriod() {
     source("secret").fetch();
 

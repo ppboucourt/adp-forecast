@@ -13,7 +13,7 @@
   "limit": 100000,
   "observations": [
     {"realtime_start": "2022-08-31", "realtime_end": "2023-01-31", "date": "2022-07-01", "value": "131900000"},
-    {"realtime_start": "2022-08-31", "realtime_end": "2022-10-04", "date": "2022-08-01", "value": "132032000"},
+    {"realtime_start": "2022-08-31", "realtime_end": "2022-10-04", "date": "2022-08-01", "value": "132032000.0"},
     {"realtime_start": "2022-10-05", "realtime_end": "2023-01-31", "date": "2022-08-01", "value": "132050000"},
     {"realtime_start": "2022-10-05", "realtime_end": "9999-12-31", "date": "2022-09-01", "value": "132258000"},
     {"realtime_start": "2022-11-02", "realtime_end": "9999-12-31", "date": "2022-10-01", "value": "."}
