@@ -6,7 +6,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /** Settings under {@code adp.*}. */
 @ConfigurationProperties("adp")
-public record AdpProperties(Csv csv, Fred fred) {
+public record AdpProperties(Csv csv, Fred fred, Ar ar) {
 
   /**
    * @param path snapshot file read by the csv source
@@ -19,4 +19,9 @@ public record AdpProperties(Csv csv, Fred fred) {
    * @param apiKey API key; the fred source refuses to run without one
    */
   public record Fred(URI baseUrl, String seriesId, String apiKey) {}
+
+  /**
+   * @param order number of lags p; fixed up front, never tuned on the backtest
+   */
+  public record Ar(int order) {}
 }

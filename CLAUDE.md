@@ -18,7 +18,7 @@ one, stop and say so instead of working around it.
 
 | Area | Pattern | Where | Deliberately not used |
 |---|---|---|---|
-| Domain | Value Object | `ReferenceMonth`, `JobsChange`, `Observation`; `PrintHistory.vintagesOf()` for revision trails | `Print` entity |
+| Domain | Value Object | `ReferenceMonth`, `MonthRange`, `JobsChange`, `Observation`, `Forecast`, `Explanation` (sealed `Term`: `Constant`, `Weighted`); `PrintHistory.vintagesOf()` for revision trails | `Print` entity; one explanation type per model |
 | Data access | Repository (port) | `PrintRepository` → `JdbcPrintRepository` | Spring Data JPA |
 | Data sources | Adapter | `PrintSource` → `CsvSource`, `FredSource`; `SnapshotWriter` → `CsvSnapshotWriter` (one shared `CsvFormat`) | Caching decorator |
 | Forecasting | Strategy | `Forecaster` → `NaiveForecaster`, `AutoregressiveForecaster` | Ensemble / Composite |

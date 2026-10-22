@@ -45,6 +45,19 @@ public final class PrintHistory {
             .toList());
   }
 
+  /** The history without any vintage of the months in {@code range}. */
+  public PrintHistory excluding(MonthRange range) {
+    Objects.requireNonNull(range, "range");
+    return new PrintHistory(
+        trails.entrySet().stream()
+            .filter(e -> !range.contains(e.getKey()))
+            .flatMap(
+                e ->
+                    e.getValue().entrySet().stream()
+                        .map(v -> new Observation(e.getKey(), v.getKey(), v.getValue())))
+            .toList());
+  }
+
   /** Latest level of every month, in month order. */
   public NavigableMap<ReferenceMonth, Long> latest() {
     var levels = new TreeMap<ReferenceMonth, Long>();

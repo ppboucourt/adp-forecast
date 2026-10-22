@@ -99,6 +99,16 @@ record Forecast(ReferenceMonth target, JobsChange point, Explanation explanation
 
 **Why only two:** build exactly what was asked; prove extensibility with a final small commit instead.
 
+**Explanation (P3):** a list of terms in two shapes, not one type per model: `Constant(name, amount)` (the
+intercept) and `Weighted(weight, month, input)` (amount = `round(weight × input)` in whole jobs). Naive is one
+`Weighted(1.0, …)`; AR is the intercept plus p `Weighted` lags. The renderer handles two shapes once, so a new
+linear model needs no CLI change. The point forecast is defined as the sum of the term amounts, and
+`Forecast` rejects any point that differs, so contributions sum exactly by construction.
+
+**Missing months (P3):** a model that lacks the months it needs throws `InsufficientHistoryException` (e.g. AR
+needs changes for all p months before the target). D4's signature is unchanged; callers decide whether it is
+an error (CLI) or a skipped month (backtest).
+
 **Cut:** moving average, ensemble, prediction intervals (an interval would also need its coverage evaluated).
 
 ### D5 — Accuracy: walk-forward backtest against first prints
@@ -110,6 +120,9 @@ with M's **first print**.
 - **Skill vs. naive** = `1 − MAE_model / MAE_naive` — positive means the model beats the baseline.
 - `AccuracyMetric` is a strategy; only these two ship.
 - AR order `p` is fixed up front (not tuned on the backtest), so the reported score stays honest.
+- **Compare like with like (P4):** score only months where every compared model produced a forecast, and
+  report how many were skipped. After an excluded window, AR cannot forecast the first p months while naive
+  can; scoring them for naive alone would make the two MAEs incomparable.
 
 **Correction recorded:** the backtest *evaluates*; it does not train. The model fits itself (OLS) inside each
 `forecast()` call. Using backtest scores to pick `p` or a window would be model selection and would bias the
@@ -130,10 +143,15 @@ interface HistoryWindow { PrintHistory apply(PrintHistory h); default HistoryWin
 
 **Bias–variance:** long windows give stable coefficients but mix old regimes; short windows adapt but are noisy.
 
+**Gaps (P3):** windows remove *levels*, so `exclude-covid` drops Mar 2020 – Dec 2021 and the change series
+loses Mar 2020 – **Jan 2022** (Jan 2022's change needs Dec 2021's level): one ordinary month lost, accepted to
+keep `HistoryWindow` on `PrintHistory`. AR builds a regression row only when the target and all p lag months
+have a change, so it never pairs months across the gap; Feb – Apr 2022 drop out as targets.
+
 ### D7 — Architecture: ports and adapters
 
 ```
-domain/      ReferenceMonth, JobsChange, Observation, PrintHistory, Forecast, Explanation   (no I/O, no libs)
+domain/      ReferenceMonth, MonthRange, JobsChange, Observation, PrintHistory, Forecast, Explanation   (no I/O, no libs)
 forecast/    Forecaster, NaiveForecaster, AutoregressiveForecaster, HistoryWindow + impls
 evaluation/  Backtester, BacktestReport, AccuracyMetric, MeanAbsoluteError, SkillVsNaive
 port/        PrintSource, PrintRepository, SnapshotWriter       (interfaces owned by the core)
@@ -162,6 +180,10 @@ Oct 2026 forecast (AR(3), window=exclude-covid): +118K
 milliseconds on ~15 years of monthly data, nothing cached.
 
 **Next month** = month after the latest reference month stored. Warn if the newest vintage is > ~35 days old.
+
+**Rounding (P5 follow-up):** terms sum exactly in whole jobs, but rounding each row to K independently can
+make the displayed rows miss the displayed total by a few K. The renderer uses largest-remainder rounding so
+the displayed rows add up to the displayed total.
 
 ### D9 — Storage and data lifecycle
 
