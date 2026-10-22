@@ -5,7 +5,9 @@ import java.util.Objects;
 
 /**
  * One published payroll level: the value for {@code month} as published on {@code vintageDate}. A
- * level stays in force until a later vintage of the same month replaces it.
+ * level stays in force until a later vintage of the same month replaces it. ADP can publish a month
+ * before it ends (2023-08 on 2023-08-30), so a vintage only has to fall on or after the month's
+ * first day.
  */
 public record Observation(ReferenceMonth month, LocalDate vintageDate, long level) {
 
@@ -15,9 +17,9 @@ public record Observation(ReferenceMonth month, LocalDate vintageDate, long leve
     if (level <= 0) {
       throw new IllegalArgumentException("level must be positive: " + level);
     }
-    if (!vintageDate.isAfter(month.endOfMonth())) {
+    if (vintageDate.isBefore(month.firstDay())) {
       throw new IllegalArgumentException(
-          "vintage " + vintageDate + " precedes the end of reference month " + month);
+          "vintage " + vintageDate + " precedes reference month " + month);
     }
   }
 }

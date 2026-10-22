@@ -43,9 +43,9 @@ class ReferenceMonthTest {
   }
 
   @Test
-  void endOfMonthIsLastDay() {
-    assertThat(new ReferenceMonth(YearMonth.of(2024, 2)).endOfMonth())
-        .isEqualTo(LocalDate.of(2024, 2, 29));
+  void firstDayIsTheFirstOfTheMonth() {
+    assertThat(new ReferenceMonth(YearMonth.of(2024, 2)).firstDay())
+        .isEqualTo(LocalDate.of(2024, 2, 1));
   }
 
   @Test

@@ -37,8 +37,8 @@ public record ReferenceMonth(YearMonth value) implements Comparable<ReferenceMon
     return new ReferenceMonth(value.plusMonths(1));
   }
 
-  public LocalDate endOfMonth() {
-    return value.atEndOfMonth();
+  public LocalDate firstDay() {
+    return value.atDay(1);
   }
 
   @Override

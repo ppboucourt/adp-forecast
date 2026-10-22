@@ -34,10 +34,24 @@ class ObservationTest {
   }
 
   @Test
-  void rejectsVintageBeforeTheMonthHasEnded() {
-    assertThatThrownBy(() -> new Observation(SEP, LocalDate.of(2026, 9, 30), 1))
+  void rejectsVintageBeforeTheReferenceMonthStarts() {
+    assertThatThrownBy(() -> new Observation(SEP, LocalDate.of(2026, 8, 31), 1))
         .isInstanceOf(IllegalArgumentException.class);
-    assertThat(new Observation(SEP, LocalDate.of(2026, 10, 1), 1).vintageDate())
-        .isEqualTo(LocalDate.of(2026, 10, 1));
+    assertThat(new Observation(SEP, LocalDate.of(2026, 9, 1), 1).vintageDate())
+        .isEqualTo(LocalDate.of(2026, 9, 1));
+  }
+
+  @Test
+  void acceptsTheRelaunchReleaseOnTheLastDayOfTheMonth() {
+    var aug2022 = ReferenceMonth.of(2022, 8);
+
+    assertThat(new Observation(aug2022, LocalDate.of(2022, 8, 31), 1).month()).isEqualTo(aug2022);
+  }
+
+  @Test
+  void acceptsAReleaseBeforeTheMonthHasEnded() {
+    var aug2023 = ReferenceMonth.of(2023, 8);
+
+    assertThat(new Observation(aug2023, LocalDate.of(2023, 8, 30), 1).month()).isEqualTo(aug2023);
   }
 }
