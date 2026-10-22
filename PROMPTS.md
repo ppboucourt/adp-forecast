@@ -17,7 +17,7 @@ asking the AI to argue its open questions before coding, and the notes below rec
 ## Build phases P0–P8
 
 All build phases ran in one Claude Code session.
-**Raw log:** `docs/sessions/02-build.txt` *(to export and add)*.
+**Raw log:** [`docs/sessions/02-build.txt`](docs/sessions/02-build.txt).
 
 ---
 

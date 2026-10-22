@@ -1,0 +1,1536 @@
+ ▐▛███▛█   Claude Code v2.1.304
+▝▜██████▀  Opus 5.5 · Claude Enterprise
+ ▝▝   ▝▝   ~/dev
+
+
+❯ I want your help solving this problem, preparing for interviewing candidates.
+  You are been evaluated as a Senior to Staff roles. And I want you to use the
+  proper Object Oriented Design Patterns for the correspondant area. /grill-me
+  The Problem Build a small command-line tool that tracks the monthly ADP
+  National Employment Report and forecasts the next set of numbers (i.e. the
+  next print of numbers). A user should be able to:
+
+● Skill(grill-me)
+  ⎿  Successfully loaded skill
+
+● Your message stopped at "A user should be able to:", so the requirements list
+  never came through. Every design decision after this depends on it, so that's
+  the first question.
+
+  Question 1: What exactly should a user be able to do?
+
+  Please paste the rest of the problem statement. If you don't have it, here's
+  the scope I'd assume. It's what this kind of take-home usually asks for:
+
+  1. Ingest a new monthly print: headline private payrolls change, plus optional
+     breakdowns (by sector, by establishment size) and revisions to the prior
+     month.
+  2. List and show the history, e.g. adp list --last 12 and adp show 2026-09.
+  3. Forecast the next print, e.g. adp forecast --model <name>, giving a point
+     estimate and ideally a range.
+  4. Compare models, i.e. backtest them against history and report the error.
+
+  Why I'd scope it this way for a Senior/Staff interview:
+
+  - Revisions are what separate a strong answer from an average one. ADP revises
+    the prior month, so a print is versioned data (what was reported vs. what
+    the figure later became), not a single number per month. The data model has
+    to handle that from the start.
+  - Several swappable forecast models plus a backtest gives a natural home for
+    the main design patterns: Strategy for models, Repository for storage,
+    Command for CLI subcommands, and Template Method for the backtest loop. It
+    also shows you can judge whether a model is any good, not just produce a
+    number.
+
+  Before we go further, also tell me:
+
+  - Language: you lean Go, but would you be interviewing in Java or Python? This
+    decides how literally we apply classic object-oriented patterns versus
+    idiomatic interfaces.
+  - Data source: does the prompt say how prints arrive (manual entry, CSV, or
+    fetching from ADP's site)?
+
+✻ Worked for 10s · done Tuesday 2:02 PM
+
+❯ See historical numbers
+
+● Noted: Requirement 1 is "see historical numbers." If the prompt lists more
+  bullets, paste them as you go and I'll fold them in.
+
+  Question 2: What is a "historical number"? In other words, what's the core
+  domain entity?
+
+  My recommendation is a versioned Print, not a single value per month.
+
+  ReferenceMonth   2026-09          (the month the data describes)
+  ReleaseDate      2026-10-01       (when ADP published it)
+  Headline         +143,000         (change in private nonfarm payrolls)
+  Breakdowns       by sector / by establishment size   (optional)
+  Revisions        later values of this same month's number
+
+  Why I'd push for this in a Senior/Staff interview:
+
+  1. ADP revises the prior month every release. Ask for "September's number" and
+     the answer depends on what you mean: the first print (what the market
+     reacted to) or the latest revised value (closest to the truth). A naive
+     map[month]int loses that distinction silently.
+  2. It changes how forecasts are judged. Traders care about predicting the
+     first print. Backtesting against revised numbers leaks future information
+     into the test (look-ahead bias). Interviewers at a trading or fintech firm
+     will probe exactly this.
+  3. Patterns it sets up:
+     - Value Object: ReferenceMonth, JobsChange (immutable, validated)
+     - Entity: Print, identified by its reference month, with append-only
+       revisions
+     - Repository: PrintRepository hides storage, so the CLI and forecasters
+       never touch files directly
+
+  So "see historical numbers" would become something like:
+
+  adp history --last 12              # latest revised values
+  adp history --last 12 --as-first   # first prints only
+  adp show 2026-09                   # full revision trail for one month
+
+  Do you agree with modeling revisions, or do you want the simpler
+  one-value-per-month model and to mention revisions only as a known extension?
+  The simpler model is defensible in a 45–60 minute interview if you say up
+  front that you're making the trade-off on purpose.
+
+✻ Crunched for 9s · done Tuesday 2:02 PM
+
+❯ See your
+  prediction for next month
+  Understand why you predicted what you did
+  A CLI is the default and entirely sufficient. A web UI is optional. We’re
+  more interested in system design and problem composition.
+
+  You decide everything else — what data to pull, how sophisticated the
+  forecast is, how the pieces fit together. How you measure the accuracy of
+  your forecasts is also your call — pick an approach, justify it, and show
+  your work.
+
+  There is no hidden requirements list. We care more about how you structure
+  the code and defend your choices than about the sophistication of any single
+  component. We’re evaluating your ability to build with AI, you should show
+  off as best you can.
+
+  Using AI
+  Use AI freely. We expect you to. This is an AI-forward role and we want to
+  see how you work with modern tools.
+
+  Submission requirements
+  Submit a Git repo (GitHub, GitLab, or a zipped folder) containing:
+
+  1. All code for the project
+
+  Runnable with clear instructions in the README. We should be able to clone
+  and run.
+
+  2. README.md covering:
+
+  How to run it
+  Your approach and the key tradeoffs you made
+  How you evaluated forecast accuracy and what the results were
+  What you'd build next if you had another week
+  3. PROMPTS.md — a log of every AI session used during the project
+
+  For each session, include:
+
+  The tool used (Claude, ChatGPT, Cursor, Copilot, Claude Code, etc.)
+  The prompts you sent
+  A brief note on what you did with the output (used as-is, edited heavily,
+  rejected and why)
+  Don't sanitize. We want the real log, including dead ends and prompts that
+  didn't work.
+
+  Acceptable formats for PROMPTS.md (use whichever is lowest friction for you):
+
+  Raw logs from Claude Code, Cursor, or other CLI tools (preferred — highest
+  fidelity)
+  Markdown exports from a browser extension (Web2MD, AI Exporter, etc.)
+  Manually written prompts + notes, if that matches your workflow
+  Prefer exported files over share links — share links can expire.
+
+  How we'll review
+  You'll walk us through your submission. Be ready to explain why you built it
+  the way you did, what you cut, and what you'd change.
+
+● Web Search("FRED ADPMNUSNERSA ADP total nonfarm private payroll employment
+            ALFRED vintages")
+  ⎿  Did 1 search in 7s
+
+● Now we have the full brief. Here's what it changes.
+
+  The requirements, restated:
+
+  1. See historical numbers
+  2. See next month's prediction
+  3. Understand why the model predicted that number (explainability is a hard
+     requirement)
+  4. Measure forecast accuracy, justify the method, and show the results
+
+  What they're really grading: structure, composition, how you defend your
+  choices, and how well you use AI. A sophisticated model is not the point.
+  That's good for an object-oriented, pattern-driven design.
+
+  Two consequences:
+
+  - Q2 is settled: model revisions. This is a take-home, not a 45-minute live
+    session, so the extra modeling fits. The accuracy requirement also makes it
+    necessary. You can't defend a backtest without saying which version of each
+    number you scored against.
+  - PROMPTS.md must include this session. It's a Claude Code session, and they
+    want raw logs. Treat everything from here on as something the reviewer will
+    read, and export it when we're done.
+
+  ---
+
+  Question 3: Where does the data come from?
+
+  My recommendation is FRED/ALFRED (St. Louis Fed) as the primary source, behind
+  an adapter interface.
+
+  - FRED carries ADP's series as ADPMNUSNERSA: monthly, seasonally adjusted,
+    total private payroll level, sourced from the ADP National Employment Report
+    (FRED (https://fred.stlouisfed.org/graph/?g=1R27h)).
+  - ALFRED keeps the historical vintages of that series (ALFRED
+    (https://alfred.stlouisfed.org/search?st=adp)). That gives us the first
+    print versus revised values for free, so the revisions model from Q2 can be
+    filled from real data instead of being hand-built.
+  - The series is reweighted every February to annual QCEW benchmark data.
+    That's a real-world wrinkle worth a paragraph in the README.
+  - The headline "+143K" number is the month-over-month difference of the level.
+    That derivation belongs in the domain layer, not the adapter.
+
+  Patterns this sets up:
+
+  - Adapter / Port: a PrintSource interface with AlfredSource, CsvSource
+    (offline fixture for tests and reviewers without an API key), and maybe a
+    later AdpWebSource.
+  - Repository: sources fetch, the repository persists (SQLite or JSON on disk).
+    Keep those two jobs separate.
+  - Decorator: an optional CachingSource wrapping AlfredSource.
+
+  Trade-off to state openly: FRED needs a free API key. To meet "clone and run,"
+  ship a bundled CSV snapshot as the default and make live fetching opt-in with
+  --source alfred.
+
+  Do you agree: ALFRED as the live source, a bundled CSV for zero-setup runs,
+  and the headline derived from the level? Or do you want to pull more inputs
+  (for example the BLS NFP series or jobless claims) as forecast features? That
+  decision shapes the forecasting layer next.
+
+  Sources:
+  - FRED: Total Nonfarm Private Payroll Employment (ADPMNUSNERSA)
+    (https://fred.stlouisfed.org/graph/?g=1R27h)
+  - ALFRED search: ADP (https://alfred.stlouisfed.org/search?st=adp)
+
+✻ Worked for 29s · done Tuesday 2:03 PM
+
+❯ What's ALFRED?
+
+● ALFRED stands for ArchivaL Federal Reserve Economic Data. It's the St. Louis
+  Fed's companion to FRED.
+
+  - FRED shows each series as it stands today, with all revisions applied. Ask
+    FRED for September 2026 ADP employment and you get the current, revised
+    value.
+  - ALFRED shows each series as it stood on any past date. Every time a release
+    revises the data, ALFRED keeps the old version, called a vintage. You can
+    ask it "what did this series look like on 2026-10-01?" and get exactly what
+    the market saw that morning.
+
+  Why it matters here:
+
+  1. First print vs. revised. ADP revises the prior month with each release.
+     ALFRED lets you recover the first-reported number for every month, which is
+     what traders reacted to and what your forecast is really trying to
+     predict.
+  2. An honest backtest. To test "what would my model have predicted for
+     October?", the model may only see data as it existed before October's
+     release. If you backtest on today's revised FRED data, the model uses
+     information that didn't exist yet (look-ahead bias). That makes your
+     accuracy numbers look better than they really are. ALFRED vintages remove
+     that problem.
+  3. Same API. ALFRED uses the same FRED API and the same free key. You add
+     realtime_start / realtime_end parameters (or vintage_dates) to the
+     observations call. That makes it a small detail of the source adapter, not
+     a separate integration.
+
+  The interview line: "I backtest against point-in-time vintages, so the model
+  never sees revisions that hadn't been published yet." Reviewers at a
+  markets-oriented firm will notice that sentence.
+
+  ---
+
+  So, back to Question 3. Here's my recommendation again:
+
+  - Live source: the FRED API with ALFRED vintage parameters, behind a
+    PrintSource interface
+  - Default source: a bundled CSV snapshot, so git clone && run works without an
+    API key
+  - Headline: derived from the level (month-over-month change) in the domain
+    layer
+
+  Do you agree, and do you want only ADP data or extra predictors as well (BLS
+  payrolls, jobless claims)? I'd start with ADP only and treat extra predictors
+  as a "next week" item in the README. That keeps the forecasting layer simple
+  enough to explain.
+
+✻ Worked for 9s · done Tuesday 2:06 PM
+
+※ recap: We're designing your ADP jobs-report forecasting CLI for the Senior/Staff take-home, working out where the data comes from. Next, tell me whether you accept FRED/ALFRED as the live source plus a bundled CSV, ADP-only. (disable recaps in /config)
+
+❯ I have no previous knowledge of the ALFRED or FRED, but we'll apply OOO
+  principals to the design so it follow SOLID and can scale and be extended as
+  the requests and demand grow.
+
+● That works: you don't need to know FRED in depth. It sits behind one
+  interface, so to the rest of the system it's just another data source. That's
+  the main point of applying SOLID here.
+
+  Decisions so far:
+
+  #: Q2
+  Decision: Print entity with append-only revisions; ReferenceMonth and
+  JobsChange as value objects
+  Principle / pattern: Single responsibility; immutable value objects
+  ────────────────────────────────────────
+  #: Q3
+  Decision: PrintSource interface with CsvSource (bundled default) and
+  FredSource
+  (live, opt-in)
+  Principle / pattern: Dependency inversion: the core depends on the interface,
+  not on FRED. Open/closed: a new source is a new class, with no edits to
+  existing ones
+  ────────────────────────────────────────
+  #: Q3
+  Decision: PrintRepository persists; sources only fetch
+  Principle / pattern: Single responsibility: fetching and storage change for
+  different reasons
+  ────────────────────────────────────────
+  #: Q3
+  Decision: Inputs: ADP only for v1. Extra predictors (BLS, jobless claims) are
+  "next week," but the forecasting layer will take a pluggable feature provider
+   so adding them needs no rewrite
+  Principle / pattern: Open/closed, applied where growth is actually likely
+
+  One guardrail for the walkthrough: "scales and extends" should mean interfaces
+  at the seams that will plausibly change (data source, forecast model,
+  accuracy metric, output format). It should not mean an abstraction on every
+  class. Staff reviewers penalize speculative layering as hard as they penalize
+  rigid code. Expect "where did you choose not to abstract?" and have an answer
+  ready.
+
+  ---
+
+  Question 4: Which language?
+
+  This decides how the patterns look in code, and you have to defend every line
+  live.
+
+  My recommendation is Python 3.12, with Protocol/ABC interfaces, frozen
+  dataclass value objects, and uv for zero-friction setup:
+
+  - Forecasting and evaluation: pandas, numpy and statsmodels make the model and
+    the backtest cheap to build, so your time goes into structure, which is
+    what they grade.
+  - Clone and run: uv run adp forecast with no JDK and no build step.
+  - SOLID still reads cleanly: class Forecaster(Protocol), constructor
+    injection, and a small composition root in cli.py.
+  - AI tooling is strongest in Python, which matters since "building with AI" is
+    graded.
+
+  The counter-argument is Java or Go. You know them, and fluency in the
+  walkthrough beats ecosystem advantages:
+
+  - Java expresses classic GoF patterns most literally, but stats libraries are
+    thin, so you'd write the model math by hand.
+  - Go works fine with small interfaces, but has the weakest numerics and more
+    boilerplate for a CLI with subcommands.
+
+  Which language can you defend line by line under questioning? If you're
+  comfortable reading and explaining idiomatic Python, I'd go with Python. If
+  not, choose Java and accept hand-rolling a simple regression.
+
+✻ Baked for 20s · done Tuesday 11:55 PM
+
+❯ If we can make set up easily, like set up all needed via a docker, to install
+  all needed with one line and have the program running. I'll choose Java,
+  even when I'm assuming low latency it's not needed and python will fit well
+  here. But I can understand better Java in and out, rahter than some pythonic
+  code.
+
+● Java it is. Choosing the language you can defend line by line is the right
+  call, and the ecosystem gap is small for this problem. Your latency point is
+  correct too: this is a batch CLI, so performance isn't a design driver. Say
+  that in the README as a deliberate non-goal.
+
+  Setup decisions. These have conventional defaults, so I'm stating them rather
+  than asking:
+
+  - Java 25 (LTS). Records for value objects, sealed interfaces for closed
+    hierarchies, and pattern matching in switch.
+  - Gradle with the wrapper committed, and picocli for subcommands. Each picocli
+    subcommand is a class, which is the Command pattern at no extra cost.
+  - Docker multi-stage build. A JDK stage builds the fat jar and a JRE-slim
+    stage runs it. The one-liner is:
+  docker build -t adp . && docker run --rm -v adp-data:/data adp forecast
+    A Makefile (or ./run.sh) wraps it as make run ARGS="history --last 12". Live
+    FRED fetching is opt-in via -e FRED_API_KEY=.... Without a key, it uses the
+    bundled CSV.
+  - Persistence: SQLite (sqlite-jdbc) on the mounted volume, behind
+    PrintRepository. The data is small and structured, and reviewers can inspect
+    it easily.
+
+  ---
+
+  Question 5: How does forecasting work, and how does it explain itself?
+
+  This is the core of the submission, because "understand why you predicted what
+  you did" is a hard requirement.
+
+  My recommendation is the Strategy pattern, with explainability built into the
+  return type:
+
+  interface Forecaster {
+      String name();
+      Forecast forecast(PrintHistory asOf);   // point-in-time history only
+  }
+
+  record Forecast(ReferenceMonth target, JobsChange point,
+                  Interval range, Explanation why) {}
+
+  Each model has to explain its own number, because only the model knows why it
+  chose it. Rendering that explanation to the terminal is a separate class
+  (single responsibility).
+
+  Models to ship. Few, simple, and each easy to explain:
+
+  1. NaiveForecaster: next = last print. This is the baseline every other model
+     must beat. Without it, your accuracy numbers mean nothing.
+  2. MovingAverageForecaster(k): mean of the last k prints. Explanation:
+     "average of Jul/Aug/Sep = …".
+  3. AutoregressiveForecaster(p): AR(p) fit by ordinary least squares (Apache
+     Commons Math). Its explanation is the strongest: the forecast decomposes
+     into intercept + Σ coefficient × lag, so you can print each lag's
+     contribution in thousands of jobs.
+  4. EnsembleForecaster (Composite pattern): weights each child model by its
+     inverse backtest error. Explanation: "60% AR(3), 30% MA(3), 10% naive,
+     because those were their recent error rates." It's the best illustration of
+     composition, which they explicitly grade.
+
+  Deliberately cut: ARIMA with seasonality (the series is already seasonally
+  adjusted), machine-learning models, and exogenous predictors (deferred to
+  "next week," but the PrintHistory input can later grow into a feature set).
+
+  Do you agree with these four models, with the ensemble as the default forecast
+  output? Or do you want to stop at three and skip the ensemble to keep scope
+  tight? I'd keep it: it's about 50 lines and it's the strongest composition
+  story in the walkthrough.
+
+✻ Cooked for 19s · done Wednesday 12:01 AM
+
+❯ I agree Strategy pattern applies well here. But I'll like to stay close to
+  the requirements and build thigs for exactly I was asked for. Or even make it
+  for 1 or 2 models so once all it's built we can see how my choises help to
+  extend easily to any other requirements.
+
+● That's a sound position, and it gives you a better walkthrough story. "I built
+  exactly what was asked, and here's how small the change is to add more" is
+  more convincing than "I built everything up front."
+
+  Q5 decided. Two models:
+
+  1. NaiveForecaster (next = last print). Keep it even at minimum scope: the
+     accuracy requirement needs a baseline. "My model has an error of 45K" means
+     nothing until you show the naive model's 60K next to it.
+  2. AutoregressiveForecaster (AR(p) by ordinary least squares). It's the real
+     model, and it covers the "explain why" requirement directly, since the
+     forecast breaks down into each lag's contribution.
+
+  Cut, and listed in the README under "next week": moving average, ensemble,
+  prediction intervals. With intervals gone, the record shrinks to
+  Forecast(target, point, explanation). If you show a range, you'd also have to
+  evaluate whether it holds up, and that's scope you weren't asked for.
+
+  Walkthrough tip: make adding a third model (for example
+  MovingAverageForecaster) the last commit in the repo. The diff will be one new
+  class and one registration line, with no edits to existing classes. That
+  shows open/closed concretely, and it costs about 20 minutes.
+
+  ---
+
+  Question 6: How do you measure forecast accuracy?
+
+  The brief says to "pick an approach, justify it, and show your work."
+
+  My recommendation is a walk-forward backtest against first prints:
+
+  for each month M in the test window:
+      history  = everything as it was published BEFORE M's release
+  (point-in-time vintage)
+      forecast = model.forecast(history)
+      actual   = M's FIRST print
+      record error = forecast − actual
+
+  Justification you'll defend:
+
+  - Walk-forward, not a single train/test split. It mirrors how the tool is
+    actually used, re-forecasting every month with whatever data exists at that
+    point.
+  - Score against the first print. That's the number the market sees and reacts
+    to on release day, so it's the number worth predicting.
+  - Point-in-time history. This prevents look-ahead bias (see the ALFRED
+    explanation). It's also why we modeled revisions in Q2. Each decision so far
+    supports the next one, which is a good thread to point out in the
+    walkthrough.
+
+  Metrics. Two, both easy to explain:
+
+  - Mean absolute error (MAE), in thousands of jobs. A non-technical reader
+    understands "off by 38K on average."
+  - Skill vs. naive = 1 − MAE_model / MAE_naive. A positive value means the
+    model beats the baseline; zero or negative means it's worthless. This one
+    number answers "is the model any good?"
+
+  Design: a Backtester takes a Forecaster and returns a BacktestReport. An
+  AccuracyMetric interface keeps metrics pluggable, though you'll ship only
+  these two. Exposed as adp backtest --model ar --from 2015-01.
+
+  Do you agree with walk-forward against first prints, scored by MAE and skill
+  vs. naive? The next question is about the test window, specifically the 2020
+  COVID months. ADP printed swings in the millions that year, and they will
+  dominate both the model fit and the error numbers if left in.
+
+✻ Brewed for 19s · done Wednesday 12:05 AM
+
+❯ I like the score part, that's how a model it's able to check the accuracy of
+  it's response so is trained in recognize what how accurate and good a
+  response it's. I think  walk-forward with MAE and skill vs naive fit into
+  that well. Correct me if my assumption it's off.
+
+● Your assumption is partly off, and it's worth fixing before the walkthrough,
+  because a reviewer will catch it.
+
+  The backtest grades the model. It doesn't train it. Two separate things are
+  happening:
+
+  ┌────────────┬───────────────────────────────────┬───────────────────────┐
+  │            │        Training (fitting)         │ Evaluation (backtest) │
+  ├────────────┼───────────────────────────────────┼───────────────────────┤
+  │            │ The AR model picks its            │ Walk-forward          │
+  │ What       │ coefficients by least squares,    │ forecasts compared    │
+  │            │ minimizing squared error on the   │ against first prints  │
+  │            │ history it's given                │                       │
+  ├────────────┼───────────────────────────────────┼───────────────────────┤
+  │ When       │ Inside every forecast() call      │ After the fact,       │
+  │            │                                   │ across many months    │
+  ├────────────┼───────────────────────────────────┼───────────────────────┤
+  │ Feeds back │                                   │ No. It's a report     │
+  │  into the  │ Yes, that's the fit               │ card, not a teacher   │
+  │ model?     │                                   │                       │
+  └────────────┴───────────────────────────────────┴───────────────────────┘
+
+  The model never "learns" from its MAE or its skill score. Those numbers only
+  tell you whether to trust it. Your intuition does describe real things, just
+  not this design:
+
+  - Model selection. If you use backtest scores to choose p (AR(2) vs. AR(3)),
+    the backtest is now steering the model. That's legitimate, but then the
+    score you report is optimistic, because you picked the winner on that same
+    data. The honest fix is to choose p on an earlier window and report on a
+    later one. A Staff reviewer may probe this.
+  - The ensemble we cut would have weighted models by their recent errors.
+    That's the feedback loop you're describing, and a good "next week" item.
+  - LLM training, which may be where the intuition comes from, does use scored
+    responses as a training signal. Statistical forecasting here doesn't.
+
+  What to say in the walkthrough: "The model fits itself on the data available
+  at each point in time. The backtest independently measures how well that
+  fitting process generalizes to months it hasn't seen."
+
+  Q6 decided: walk-forward backtest against first prints, MAE plus skill vs.
+  naive, and p fixed up front (I'd suggest p = 3 and saying why in the README)
+  so the reported score stays honest.
+
+  ---
+
+  Question 7: What data window? Specifically, what about 2020?
+
+  ADP's monthly change ran roughly between −20 million and +several million in
+  spring 2020. A normal month is ±100–300K. If you leave those months in:
+
+  - The AR fit gets distorted. Least squares chases the huge values, and the
+    coefficients that come out describe COVID dynamics, not normal months.
+  - MAE gets dominated by them. A few months with multi-million-job errors would
+    swamp ten years of normal error.
+
+  Options:
+
+  1. Exclude a fixed window (Mar 2020 – Dec 2021) from both fitting and scoring.
+     Make it a named, configurable ExclusionWindow and disclose it in the
+     README. Simple and defensible.
+  2. Start after COVID (fit and test from 2022 onward). Clean, but leaves only
+     about 4 years of data, which makes the AR fit and the backtest
+     statistically thin.
+  3. Keep everything and use robust methods (median absolute error, robust
+     regression). More sophisticated, and harder to explain.
+
+  My recommendation is option 1: exclude Mar 2020 – Dec 2021 from fitting and
+  scoring, keep those months in history for display, and report the backtest
+  both with and without the exclusion. That way you're showing the effect, not
+  hiding it.
+
+  One caveat: I'm going from memory on how big the 2020 ADP swings were. Verify
+  against the real series once the data is loaded.
+
+  Do you agree with option 1?
+
+✻ Brewed for 14s · done Wednesday 12:11 AM
+
+❯ I want to understand better how choosing a window will affect my
+  forecast/prediction and if that can be treated as plug-in feature in my
+  service, so we can initialy choose which window to pick and see how the
+  system behaves based on that. Let me know if that makes sense.
+
+● That makes sense, and it's a good instinct. The window is a modeling choice
+  with no single right answer, so making it a pluggable strategy and letting the
+  backtest show its effect is a better story than picking one and defending it.
+  First, how the window affects the output.
+
+  How the window changes the forecast
+
+  There are two separate windows, and it's worth keeping them apart:
+
+  ┌───────────┬──────────────────────────┬───────────────┬─────────────────┐
+  │   Knob    │     What it controls     │ Changes the   │  Changes the    │
+  │           │                          │   forecast?   │ accuracy score? │
+  ├───────────┼──────────────────────────┼───────────────┼─────────────────┤
+  │ Fit       │ Which months the AR      │               │                 │
+  │ window    │ model fits its           │ Yes           │ Yes, indirectly │
+  │           │ coefficients on          │               │                 │
+  ├───────────┼──────────────────────────┼───────────────┼─────────────────┤
+  │ Scoring   │ Which months the         │ No            │ Yes             │
+  │ window    │ backtest grades          │               │                 │
+  └───────────┴──────────────────────────┴───────────────┴─────────────────┘
+
+  Fit-window effects (AR model only; the naive model ignores the window, since
+  it uses only the last print):
+
+  - Including COVID: least squares chases the multi-million swings. The
+    coefficients end up describing extreme crash-and-rebound behavior, and
+    normal-month forecasts get distorted.
+  - Long window (e.g. 2010–now): more data, so more stable coefficients. But it
+    mixes in older regimes (for example, the 2010s pattern of steady
+    ~+200K/month), which pulls the forecast toward an outdated average.
+  - Short window (e.g. last 36 months): adapts to the current regime, but fewer
+    data points mean noisier coefficients that can swing between runs.
+
+  That's the classic bias–variance trade-off, and naming it in the README is a
+  strong signal.
+
+  Scoring-window effect: it only changes what you report. Including 2020
+  inflates MAE for every model, the naive baseline included. That's why the
+  skill-vs-naive score stays more stable across windows than raw MAE does.
+
+  As a plug-in
+
+  @FunctionalInterface
+  interface HistoryWindow {
+      PrintHistory apply(PrintHistory history);
+
+      default HistoryWindow andThen(HistoryWindow next) {
+          return h -> next.apply(apply(h));
+      }
+  }
+
+  // implementations, ~10 lines each
+  AllHistory()                          // expanding: everything up to the as-of
+  date
+  Rolling(int months)                   // last N months only
+  Excluding(MonthRange range)           // drop a named range, e.g. COVID
+
+  - Strategy: the window is injected into the forecaster and the backtester,
+    which never know which window they got.
+  - Composition: new Rolling(60).andThen(new Excluding(COVID)). You get new
+    behavior by combining existing pieces without writing a new class
+    (open/closed).
+  - CLI:
+  adp forecast --window exclude-covid
+  adp backtest --window all --window rolling:36 --window exclude-covid
+    The second command prints a comparison table (MAE and skill per window) so
+    you can see how the system behaves. That's exactly the exploration you
+    described.
+
+  One caution: if you pick the default window because it had the best backtest
+  score, that's the same selection bias as tuning p. The honest framing is:
+  "Default chosen on domain grounds (COVID is a structural break). Here's the
+  comparison table showing the sensitivity."
+
+  Scope: to stay close to your minimal-build preference, ship AllHistory and
+  Excluding. Hold Rolling back as the second extension-demo commit, next to the
+  third model.
+
+  Do you agree: HistoryWindow as a composable strategy, exclude-covid as the
+  default, and a multi-window backtest comparison?
+
+✻ Churned for 21s · done Wednesday 12:16 AM
+
+❯ yes, go with exclude-covid default and the comparison
+
+● Decided: exclude-covid is the default, with a multi-window backtest
+  comparison.
+
+  Running decision log:
+
+  ┌──────┬───────────────────────────────────────────────────────────────────┐
+  │  #   │                             Decision                              │
+  ├──────┼───────────────────────────────────────────────────────────────────┤
+  │ Q2   │ Print entity with append-only revisions; value objects            │
+  │      │ ReferenceMonth, JobsChange                                        │
+  ├──────┼───────────────────────────────────────────────────────────────────┤
+  │ Q3   │ PrintSource interface → CsvSource (bundled default), FredSource   │
+  │      │ (opt-in, with vintages); PrintRepository handles persistence      │
+  ├──────┼───────────────────────────────────────────────────────────────────┤
+  │ Q4   │ Java 25, Gradle, picocli, SQLite, Docker one-liner                │
+  ├──────┼───────────────────────────────────────────────────────────────────┤
+  │      │ Forecaster strategy → NaiveForecaster,                            │
+  │ Q5   │ AutoregressiveForecaster(p=3); Forecast(target, point,            │
+  │      │ explanation)                                                      │
+  ├──────┼───────────────────────────────────────────────────────────────────┤
+  │ Q6   │ Walk-forward backtest vs. first prints; MAE + skill vs. naive; p  │
+  │      │ fixed up front                                                    │
+  ├──────┼───────────────────────────────────────────────────────────────────┤
+  │ Q7   │ HistoryWindow composable strategy → AllHistory, Excluding;        │
+  │      │ default exclude-covid; multi-window comparison                    │
+  ├──────┼───────────────────────────────────────────────────────────────────┤
+  │ Demo │ Final commits add MovingAverageForecaster and Rolling to show     │
+  │      │ open/closed                                                       │
+  └──────┴───────────────────────────────────────────────────────────────────┘
+
+  ---
+
+  Question 8: How is the code organized, and who wires the objects together?
+
+  We now have about a dozen interfaces and implementations. How they're arranged
+  is what the reviewers will look at first.
+
+  My recommendation is ports-and-adapters (hexagonal), with manual wiring and no
+  dependency-injection framework:
+
+  com.example.adp
+  ├── domain/        Print, ReferenceMonth, JobsChange, PrintHistory, Forecast,
+  Explanation
+  │                  → pure Java, no I/O, no libraries
+  ├── forecast/      Forecaster, NaiveForecaster, AutoregressiveForecaster,
+  HistoryWindow + impls
+  ├── evaluation/    Backtester, BacktestReport, AccuracyMetric,
+  MeanAbsoluteError, SkillVsNaive
+  ├── port/          PrintSource, PrintRepository                 ← interfaces
+  the core owns
+  ├── adapter/       CsvSource, FredSource, SqlitePrintRepository  ← I/O lives
+  only here
+  ├── cli/           picocli commands: History, Forecast, Explain?, Backtest,
+  Sync
+  │                  + renderers (text tables)
+  └── App.java       composition root: the ONE place that calls `new` on
+  concrete classes
+
+  Why:
+
+  - Dependency rule: arrows point inward. domain depends on nothing, while
+    adapter and cli depend on the core. Swapping SQLite for Postgres, or the CLI
+    for the optional web UI, touches nothing inside the core. That's the honest
+    answer to "how does this scale?"
+  - No Spring or Guice: about 15 objects don't justify a container. A ~40-line
+    App.java that builds the object graph by hand is explicit, starts instantly
+    in Docker, and is easy to walk a reviewer through. The design is DI-ready
+    (everything takes its dependencies through the constructor), so adding a
+    container later is mechanical. Saying why you didn't use one is a
+    Staff-level judgment call.
+  - Testability: the domain and forecast layers are unit-tested with in-memory
+    fakes of the ports and no database. Adapters get a few focused integration
+    tests.
+
+  Where I'd deliberately not abstract: renderers. One text output format doesn't
+  need a Renderer interface until a second format (JSON, web) actually shows
+  up. That's your answer to "where did you choose not to abstract?"
+
+  Do you agree with this layout and manual wiring? One sub-question: should
+  "explain" be its own command (adp explain) or a flag on forecast (adp forecast
+  --explain)? I'd go with the flag, since the explanation always belongs to a
+  specific forecast.
+
+✻ Cooked for 15s · done Wednesday 12:22 AM
+
+❯ Why manual wiring when there is a battle probe framework called Spring that
+  deals perfectly with dependency injection and give enough freedom to add
+  dependency as needed. SpringBoot it's what we should use. I use to leverage
+  on https://start.spring.io/, but let me know what it's recomended this days
+  to build a SpringBoot application.
+
+● Web Search("Spring Boot latest version 2026 release Java 25 Spring Initializr
+            restclient starter")  ⎿  Did 2 searches in 6s
+
+● Fair pushback. Spring Boot is a defensible choice, and the argument that
+  settled Java applies again: fluency in the walkthrough matters more than
+  minimalism. Here's the honest trade-off and how to make Spring strengthen the
+  design rather than blur it.
+
+  Spring Boot vs. manual wiring
+
+  ┌─────────────────┬──────────────────┬────────────────────────────────────┐
+  │                 │  Manual wiring   │            Spring Boot             │
+  ├─────────────────┼──────────────────┼────────────────────────────────────┤
+  │ Startup         │ ~100 ms          │ ~1–2 s per CLI call (acceptable;   │
+  │                 │                  │ you already ruled latency out)     │
+  ├─────────────────┼──────────────────┼────────────────────────────────────┤
+  │                 │ The whole object │ Spread across @Configuration /     │
+  │ Explicitness    │  graph is in one │ component scan                     │
+  │                 │  file            │                                    │
+  ├─────────────────┼──────────────────┼────────────────────────────────────┤
+  │ Config, HTTP,   │                  │ @ConfigurationProperties,          │
+  │ JDBC,           │ Hand-rolled      │ RestClient, JdbcClient, Flyway,    │
+  │ migrations      │                  │ all built in                       │
+  ├─────────────────┼──────────────────┼────────────────────────────────────┤
+  │ Growth path     │ Rewire by hand   │ Add a web starter and controllers; │
+  │ (web UI later)  │                  │  the core is untouched             │
+  ├─────────────────┼──────────────────┼────────────────────────────────────┤
+  │ Plug-in         │ One registration │ None at all: inject Map<String,    │
+  │ registry        │  line per model  │ Forecaster> and Spring collects    │
+  │                 │                  │ every bean                         │
+  └─────────────────┴──────────────────┴────────────────────────────────────┘
+
+  The last row is the strongest reason. Adding a model or a window becomes one
+  new @Bean, with zero edits anywhere else. That's a cleaner open/closed demo
+  than manual wiring would give.
+
+  The question you'll get: "Isn't Spring heavy for a CLI?" Your answer: "Yes, a
+  1–2 second startup. I traded that for config, persistence, HTTP and the
+  plug-in registry, plus a direct path to the optional web UI."
+
+  One rule that keeps the design clean
+
+  No Spring annotations in domain/, forecast/ or evaluation/. Those packages
+  stay plain Java. Spring lives only in adapter/, cli/ and a config/ package of
+  @Configuration classes:
+
+  @Configuration
+  class ForecastConfig {
+      @Bean Forecaster naive()          { return new NaiveForecaster(); }
+      @Bean Forecaster ar(AdpProps p)   { return new
+  AutoregressiveForecaster(p.arOrder()); }
+      @Bean HistoryWindow excludeCovid(){ return new
+  Excluding(MonthRange.COVID); }
+  }
+
+  That preserves the dependency rule from Q8. The core still compiles and
+  unit-tests with no framework, and you can say "Spring is a delivery detail;
+  the domain doesn't know it exists." Reviewers often probe exactly that seam.
+
+  How to bootstrap it today
+
+  start.spring.io is still the standard. IntelliJ's and VS Code's "new Spring
+  project" wizards and the spring init CLI all call the same service. Settings:
+
+  - Spring Boot 4.1.x. 4.1.0 is the newest release line (June 2026), and 4.0's
+    support ends 2026‑12‑31, so don't start on it (mvnrepository
+    (https://mvnrepository.com/artifact/org.springframework.boot/spring-boot),
+    HeroDevs EOL table (https://www.herodevs.com/blog-posts/spring-boot-versions
+    -eol-dates-and-latest-releases-april-2026)). Take whatever patch Initializr
+    shows as the default.
+  - Java 25. Supported from Boot 4.0 onward (compatibility table
+    (https://stevenpg.com/references/spring-version-compatibility/)).
+  - Gradle (Kotlin DSL), Jar packaging.
+  - Dependencies to pick in Initializr: JDBC API, Flyway Migration, Validation,
+    Spring Configuration Processor. Add an HTTP client for FRED (RestClient); I
+    couldn't confirm which Initializr entry provides it in Boot 4, so check the
+    dependency list.
+  - Add by hand in build.gradle.kts: org.xerial:sqlite-jdbc,
+    info.picocli:picocli-spring-boot-starter, and
+    org.apache.commons:commons-math3 (least-squares fitting for the AR model).
+  - Do not add Spring Web. Set spring.main.web-application-type=none and turn
+    the banner off, so the CLI output stays clean.
+
+  I'd pair picocli with its Spring Boot starter rather than use Spring Shell.
+  Spring Shell is built around an interactive REPL, while picocli gives you
+  plain adp forecast --window ... subcommands that are themselves Spring beans.
+
+  ---
+
+  Q8, restated: do you agree with ports-and-adapters packaging, Spring Boot
+  confined to config/, adapter/ and cli/, and picocli for commands? Still open
+  from before: should explaining be a flag (adp forecast --explain) or its own
+  command (adp explain)? I'd go with the flag.
+
+  Sources:
+  - mvnrepository: spring-boot
+    (https://mvnrepository.com/artifact/org.springframework.boot/spring-boot)
+  - HeroDevs: Spring Boot versions, EOL dates (https://www.herodevs.com/blog-pos
+    ts/spring-boot-versions-eol-dates-and-latest-releases-april-2026)
+  - Spring version compatibility
+    (https://stevenpg.com/references/spring-version-compatibility/)
+  - isitpatched: Spring Boot (https://isitpatched.com/spring-boot)
+
+✻ Sautéed for 40s · done Wednesday 12:25 AM
+
+❯ Maybe for a CLI application SpringBoot it's over engineer things, but I do
+  want to use Dependency Injection for sure. I'm not familiar either with the
+  Bloomberg terminal that helps thousands of traders, if a CLI like this one we
+  are building get's to grow like that, maybe makes sense to use SpringBoot,
+  but I'll like to keep things simple and extendable.
+
+● That's the right call, and it rests on a distinction worth stating out loud in
+  the walkthrough: dependency injection is a design principle, not a framework.
+  You can have full DI without Spring.
+
+  DI without a container ("pure DI")
+
+  Every class receives its dependencies through its constructor and never calls
+  new on a collaborator. One class, the composition root, builds the object
+  graph:
+
+  // App.java — the only place that knows concrete classes
+  var repo      = new SqlitePrintRepository(dataSource);
+  var window    = new Excluding(MonthRange.COVID);
+  var models    = Map.<String, Forecaster>of(
+                      "naive", new NaiveForecaster(),
+                      "ar",    new AutoregressiveForecaster(3));
+  var backtester = new Backtester(List.of(new MeanAbsoluteError(), new
+  SkillVsNaive()));
+
+  new CommandLine(new AdpCommand(repo, models, window,
+  backtester)).execute(args);
+
+  What you keep: all the DI benefits. Classes depend on interfaces, tests inject
+  fakes, and implementations swap without edits.
+  What you give up: autowiring. Adding a model means one line in that Map, which
+  is a tiny and very visible cost.
+
+  Your growth argument, made concrete: because the core never references a
+  container, moving to Spring Boot later (if this grows into a multi-user
+  service) means rewriting only App.java as @Configuration classes. Nothing in
+  domain, forecast or evaluation changes. "I deferred the framework decision
+  until there's a need for it, and the architecture makes it cheap to change" is
+  a strong Staff-level line.
+
+  On Bloomberg: a product like that scales on data infrastructure, real-time
+  distribution and entitlements, not on its choice of DI container. So "would
+  Spring help us scale?" isn't the right question at this size, and you can say
+  so.
+
+  Middle ground, if you'd rather have a container: Dagger 2 is compile-time and
+  reflection-free, starts instantly, and is a few annotations per class. I
+  wouldn't add it. At around 15 objects it adds tooling without adding clarity.
+
+  Q8 decided
+
+  - Ports-and-adapters packaging (layout as shown earlier)
+  - Constructor injection everywhere, with a single composition root in App.java
+  - picocli (plain, no Spring starter), JDBC with sqlite-jdbc,
+    java.net.http.HttpClient for FRED, commons-math3 for the AR fit
+  - Gradle (Kotlin DSL), Java 25, Docker multi-stage build
+
+  ---
+
+  Question 9: How should a user ask for the "why"?
+
+  My recommendation is a flag: adp forecast --explain. An explanation only makes
+  sense attached to a specific forecast. A separate explain command would have
+  to re-run the forecast or look up a stored one, which means more state and
+  more code.
+
+  Default output stays one line:
+  Oct 2026 forecast (AR(3), window=exclude-covid): +118K
+  --explain adds the breakdown:
+    intercept                    +42K
+    0.45 × Sep (+143K)           +64K
+    0.21 × Aug (+ 54K)           +11K
+    0.04 × Jul (+ 23K)            +1K
+    ─────────────────────────────────
+    forecast                    +118K
+    backtest MAE 61K | skill vs naive +0.18
+  (The numbers are illustrative.)
+
+  Including the backtest skill in the explanation answers the other half of
+  "why": not just how the model arrived at the number, but how much to trust it.
+
+  Do you agree with --explain as a flag and that output shape?
+
+✻ Brewed for 17s · done Wednesday 12:30 AM
+
+❯ Back to the Dependency Injection, at least for that I'd like to use
+  SpringBoot. I don't want to deal with DI my self.
+
+● Decided: Spring Boot for DI. This is a legitimate choice, and you can defend
+  it in one sentence: "I used Spring for dependency injection so I wasn't
+  maintaining the wiring by hand, and I kept it at the edges so the core stays
+  framework-free."
+
+  Q8 final: Spring Boot, kept minimal
+
+  Use only what pays for itself:
+
+  ┌──────────────────────────────────────┬──────────────────────────────────┐
+  │                 Use                  │          Skip (and why)          │
+  ├──────────────────────────────────────┼──────────────────────────────────┤
+  │ spring-boot-starter for DI, config   │ Spring Web (no server;           │
+  │ and profiles                         │ web-application-type=none)       │
+  ├──────────────────────────────────────┼──────────────────────────────────┤
+  │ spring-boot-starter-jdbc +           │ Spring Data JPA (one table,      │
+  │ sqlite-jdbc                          │ plain SQL is clearer)            │
+  ├──────────────────────────────────────┼──────────────────────────────────┤
+  │ spring.sql.init with a schema.sql    │ Flyway (one schema, no migration │
+  │ file                                 │  history yet; "next week" item)  │
+  ├──────────────────────────────────────┼──────────────────────────────────┤
+  │ picocli-spring-boot-starter          │ Spring Shell (built for          │
+  │ (commands are beans)                 │ interactive use)                 │
+  ├──────────────────────────────────────┼──────────────────────────────────┤
+  │ @ConfigurationProperties for         │                                  │
+  │ adp.ar-order, adp.default-window,    │                                  │
+  │ adp.fred.api-key                     │                                  │
+  ├──────────────────────────────────────┼──────────────────────────────────┤
+  │ java.net.http.HttpClient for FRED    │ RestClient (would pull in        │
+  │                                      │ spring-web for a single GET)     │
+  └──────────────────────────────────────┴──────────────────────────────────┘
+
+  The boundary rule, unchanged: no Spring annotations in domain/, forecast/ or
+  evaluation/. Those classes are plain Java with constructor injection, and
+  config/ registers them as beans:
+
+  @Configuration
+  class ForecastConfig {
+      @Bean Forecaster naive()               { return new NaiveForecaster(); }
+      @Bean Forecaster ar(AdpProperties p)   { return new
+  AutoregressiveForecaster(p.arOrder()); }
+      @Bean HistoryWindow excludeCovid()     { return new
+  Excluding(MonthRange.COVID); }
+  }
+
+  The plug-in registry comes free: commands receive Map<String, Forecaster> and
+  Spring collects every Forecaster bean. The extension-demo commits
+  (MovingAverageForecaster, Rolling) are each one new class plus one @Bean
+  method, with no edits to existing code. That's the open/closed proof.
+
+  Initializr settings: Spring Boot 4.1.x, Java 25, Gradle (Kotlin DSL), Jar
+  packaging. Dependencies: JDBC API and Spring Configuration Processor. Add
+  sqlite-jdbc, picocli-spring-boot-starter and commons-math3 by hand.
+
+  ---
+
+  Question 9 (still open): how does a user ask for the "why"?
+
+  My recommendation is a flag, adp forecast --explain. An explanation belongs to
+  one specific forecast, and a separate explain command would have to re-run or
+  store forecasts.
+
+  $ adp forecast
+  Oct 2026 forecast (AR(3), window=exclude-covid): +118K
+
+  $ adp forecast --explain
+  Oct 2026 forecast (AR(3), window=exclude-covid): +118K
+    intercept                    +42K
+    0.45 × Sep (+143K)           +64K
+    0.21 × Aug (+ 54K)           +11K
+    0.04 × Jul (+ 23K)            +1K
+    ─────────────────────────────────
+    forecast                    +118K
+    backtest MAE 61K | skill vs naive +0.18
+  (The numbers are illustrative.)
+
+  The last line covers the second half of "why": how much to trust the number,
+  not just how it was built.
+
+  Do you agree with the --explain flag and this output shape?
+
+✻ Sautéed for 14s · done 2:59 AM
+
+❯ yes
+
+● Decided: --explain flag, with the contributions breakdown plus a trust line.
+
+  ---
+
+  Question 10: How does data get in, and how is it stored?
+
+  This is where the revisions decision (Q2) turns into an actual schema.
+
+  My recommendation is to store raw vintages and derive everything else:
+
+  CREATE TABLE observation (
+    reference_month TEXT NOT NULL,   -- '2026-09'
+    vintage_date    TEXT NOT NULL,   -- '2026-10-01' (when this value was
+  published)
+    level           INTEGER NOT NULL,-- total private employment, persons
+    PRIMARY KEY (reference_month, vintage_date)
+  );
+
+  - Store levels exactly as the source gives them. Headline changes, first
+    prints and revisions are all computed in the domain (PrintHistory). That
+    keeps a single source of truth: if the derivation has a bug, you fix code,
+    not data.
+  - Vintages are immutable, so sync is INSERT OR IGNORE: idempotent and safe to
+    re-run.
+  - PrintHistory.asOf(date) picks the latest vintage on or before date for each
+    month. Both the backtest's point-in-time view and the "latest" view in
+    history fall out of that one method.
+
+  A subtlety worth a README paragraph (and a unit test): the first-print change
+  for September is level(Sep) − level(Aug), with both levels taken from the same
+  vintage, the one that first published September. Subtracting September's
+  first level from August's first level mixes vintages, and since August gets
+  revised in September's release, you'd get a number ADP never published. That's
+  exactly the kind of bug a reviewer probes for.
+
+  Lifecycle:
+
+  ┌───────────────────┬─────────────────────────────────────────────────────┐
+  │       Step        │                      Behavior                       │
+  ├───────────────────┼─────────────────────────────────────────────────────┤
+  │                   │ Repository empty → seed from bundled                │
+  │ First run         │ data/adp_vintages.csv, so it works offline with no  │
+  │                   │ key                                                 │
+  ├───────────────────┼─────────────────────────────────────────────────────┤
+  │ adp sync          │ Fetch from the configured PrintSource (CSV or       │
+  │                   │ FRED), insert new vintages, report "3 new vintages" │
+  ├───────────────────┼─────────────────────────────────────────────────────┤
+  │ adp forecast,     │ Read-only. They never fetch implicitly              │
+  │ history, backtest │                                                     │
+  └───────────────────┴─────────────────────────────────────────────────────┘
+
+  Keeping fetches explicit means forecasts are reproducible and offline. The
+  same command on the same database always gives the same answer, which makes
+  debugging and the demo predictable.
+
+  One dependency to flag: the bundled CSV has to contain real vintages, so
+  you'll need a FRED key once to generate it. I'd include a small adp sync
+  --source fred --export data/adp_vintages.csv path and say in the README how
+  the snapshot was produced and on what date.
+
+  Do you agree with storing raw vintages, deriving changes in the domain, and
+  explicit sync?
+
+✻ Crunched for 15s · done 3:02 AM
+
+❯ This: I'd include a small adp sync --source fred --export
+  data/adp_vintages.csv path and say in the README. Should be executable via
+  the makefile on the init or some step that set up the application to be used.
+  As long as we keep storage locally, but with the flexibility to use the
+  Spring repository to point to a DB like Postgres or even S3, I'm ok with that
+  decision.
+
+● Agreed. Two refinements make it work in practice.
+
+  1. make init must work without a FRED key
+
+  Reviewers won't have a key, so the default path can't depend on one:
+
+  init:            ## build image + seed DB from committed snapshot (+ live sync
+  if key set)
+          docker build -t adp .
+          docker run --rm -v adp-data:/data adp sync --source csv
+          @if [ -n "$$FRED_API_KEY" ]; then \
+            docker run --rm -v adp-data:/data -e FRED_API_KEY adp sync --source
+  fred; fi
+
+  refresh-snapshot: ## maintainer only: pull from FRED and rewrite the committed
+  CSV
+          docker run --rm -v adp-data:/data -v $(PWD)/data:/out -e FRED_API_KEY
+  \
+            adp sync --source fred --export /out/adp_vintages.csv
+
+  - Reviewer: git clone && make init && make run ARGS="forecast --explain" works
+    offline.
+  - You: make refresh-snapshot before submitting, then commit the CSV. The
+    README records the snapshot date.
+
+  2. Storage flexibility, made precise
+
+  A wording correction that matters in the walkthrough: PrintRepository is our
+  own port (interface), not a Spring Data repository. Spring only chooses which
+  implementation to inject. That's the distinction to make if a reviewer asks
+  "how would you move to Postgres or S3?"
+
+  Backend: SQLite (default)
+  How: JdbcPrintRepository using JdbcClient
+  Code change: none
+  ────────────────────────────────────────
+  Backend: Postgres
+  How: Same class; change spring.datasource.url, add the driver
+  Code change: zero. Use INSERT … ON CONFLICT DO NOTHING, which both SQLite and
+  Postgres support, instead of SQLite-only INSERT OR IGNORE
+  ────────────────────────────────────────
+  Backend: S3
+  How: It's an object store, not a database: a new S3PrintRepository (e.g. one
+  CSV/Parquet object per vintage)
+  Code change: one new class, selected by @ConditionalOnProperty(name =
+  "adp.storage", havingValue = "s3")
+
+  The plan is to build only SQLite and keep the SQL portable. The README's "next
+  week" section describes the Postgres and S3 paths. If a reviewer asks how
+  swapping backends works, the answer is: "one property for Postgres, one class
+  plus one property for S3, and the domain never knows."
+
+  Q10 decided: raw vintages stored as levels, changes derived in the domain,
+  explicit sync, make init (no key needed), make refresh-snapshot (maintainer),
+  portable SQL behind our own port.
+
+  ---
+
+  Question 11: What's the testing strategy?
+
+  "Verify before you claim done" applies to the submission too: reviewers will
+  run make test.
+
+  My recommendation is a test pyramid aligned with the layers:
+
+  Layer: domain/
+  Test type: Pure unit tests, no Spring
+  Examples: First-print change uses the same vintage for both levels; asOf(date)
+
+  picks the right vintage; ReferenceMonth validation
+  ────────────────────────────────────────
+  Layer: forecast/
+  Test type: Unit tests with hand-built histories
+  Examples: AR(p) on a synthetic series with known coefficients recovers them
+  (±ε); the explanation's contributions sum exactly to the point  forecast;
+  Excluding drops the right months
+  ────────────────────────────────────────
+  Layer: evaluation/
+  Test type: Unit tests
+  Examples: Backtest never passes the model data from after the as-of date (the
+  look-ahead guard, the most important test in the repo); naive skill = 0 by
+  construction
+  ────────────────────────────────────────
+  Layer: adapter/
+  Test type: Integration tests
+  Examples: JdbcPrintRepository against a temporary SQLite file; CsvSource
+  against a fixture; FredSource against a recorded JSON response (no network in
+   CI)
+  ────────────────────────────────────────
+  Layer: cli/
+  Test type: One @SpringBootTest smoke test
+  Examples: forecast --explain runs end to end on the bundled snapshot and
+  prints
+  a line matching the expected shape
+
+  Tooling: JUnit 5 and AssertJ, make test running inside Docker, and make lint
+  (Spotless or Checkstyle; pick one).
+
+  Deliberately cut: mutation testing, property-based tests, a Testcontainers
+  Postgres run (it goes in "next week" with the Postgres path).
+
+  Do you agree with this pyramid? Specifically: are you comfortable treating the
+  look-ahead guard and the "contributions sum to the forecast" check as the two
+  non-negotiable tests you'll highlight in the walkthrough?
+
+✻ Worked for 21s · done 3:08 AM
+
+❯ yes, agree with the test pyramid
+
+● Decided: the test pyramid, with the look-ahead guard and
+  contributions-sum-to-forecast as the two highlighted tests.
+
+  Two smaller points have obvious defaults, so I'm stating them rather than
+  asking:
+
+  - "Next month" = the month after the latest reference month in the database.
+    If the newest vintage is more than about 35 days old, forecast prints a
+    warning ("data may be stale, run adp sync") instead of silently forecasting
+    the wrong month.
+  - The trust line in --explain runs the backtest live. With roughly 15 years of
+    monthly data it takes milliseconds, so there's no caching and no stored
+    scores, and nothing can go stale.
+
+  ---
+
+  Question 12: How do you show your AI workflow?
+
+  The brief says "we're evaluating your ability to build with AI" and wants the
+  raw PROMPTS.md log. That makes the process part of the deliverable, not just
+  the code. This is the branch candidates most often get wrong: either a messy
+  log that reads like the AI did everything, or a sanitized one that breaks
+  their "don't sanitize" rule.
+
+  My recommendation is a deliberate, phased workflow that leaves a readable
+  trail:
+
+  Phase: 1. Design
+  What you do: This grill session
+  What ends up in the repo: docs/DESIGN.md (the decision log above) + this
+  session's raw log
+  ────────────────────────────────────────
+  Phase: 2. Decisions
+  What you do: One short ADR per contested call: Spring for DI, vintages vs.
+  latest, exclude-covid, two models only
+  What ends up in the repo: docs/adr/0001-…md … (4–5 files, ~10 lines each)
+  ────────────────────────────────────────
+  Phase: 3. Build
+  What you do: Claude Code sessions, one per layer (domain → forecast →
+  evaluation → adapters → CLI), test-first
+  What ends up in the repo: A CLAUDE.md in the repo holding the architecture
+  rules (e.g. "no Spring annotations in domain/forecast/evaluation") so every
+  session follows them
+  ────────────────────────────────────────
+  Phase: 4. Review
+  What you do: Run a code-review pass on each layer before merging it; record
+  what you accepted and rejected
+  What ends up in the repo: Notes in PROMPTS.md
+  ────────────────────────────────────────
+  Phase: 5. Extension demo
+  What you do: The MovingAverageForecaster and Rolling commits, built with one
+  prompt each
+  What ends up in the repo: Small diffs that prove open/closed
+
+  Why it works for the review:
+
+  - The repo's CLAUDE.md is the strongest signal. It shows you steer the AI with
+    architecture constraints instead of accepting whatever it produces.
+    Reviewers can read it.
+  - One session per layer keeps each log short and readable, and makes "edited
+    heavily / rejected and why" notes easy to write. The brief explicitly asks
+    for those.
+  - Keep the dead ends. For example, from this session: we went from manual
+    wiring to Spring and back again, and I corrected your "the backtest trains
+    the model" assumption. Those show judgment, which is what they're looking
+    for.
+
+  Two hygiene points:
+
+  1. Export: Claude Code stores raw session transcripts (JSONL) under
+     ~/.claude/projects/, and PROMPTS.md can link to or include them. Export
+     each session right after it ends, not at the end of the project.
+  2. Separate the take-home from work. This session ran in your work
+     environment. Before you commit any raw log, skim it for unrelated work
+     context, and host the repo on a personal GitHub account rather than company
+     infrastructure.
+
+  Do you agree with this phased workflow, specifically the repo CLAUDE.md with
+  architecture rules and one session per layer? After this, I think we've
+  covered the design tree. The last step would be to write it all up as
+  docs/DESIGN.md so phase 1 has an artifact.
+
+✻ Churned for 18s · done 3:09 AM
+
+❯ I agree with the phase workflow, but I want to have a sent to them not all we
+  have done, but the specific things that matter and refined. What I meant
+  with refined it's maybe more structured prompts that can be a combination and
+  refinenment of our grill-me session. Rather than me posting the whole
+  problem, something that it's more structured, like the phase workflow, each
+  with a thoughtful prompt that can have some open questions like the over
+  engineering part that lead us to discuss using SpringBoot or not. Also I want
+  prompts that have instructions of which OO Design patter to use for. Let me
+  know if that makes sense and if you have any other suggestions.
+
+● That makes sense, with one important adjustment. Your brief says: "Don't
+  sanitize. We want the real log, including dead ends." If you rewrite this
+  session into polished prompts and submit those instead of the real log, you're
+  doing exactly what they asked you not to. If they compare it against your
+  walkthrough, it could cost you more than a messy log would.
+
+  The way to get both: write the structured prompts now, distilled from this
+  session, and then actually run them to build the project. They become your
+  real build log, and they're clean because you designed them in advance. That's
+  the strongest "building with AI" story you can tell: "I used one session to
+  design, then turned the decisions into a prompt pack that drove the build."
+
+  How PROMPTS.md would look
+
+  ┌───────────┬───────────────────────────────────────────────┬─────────────┐
+  │  Section  │                    Content                    │   Raw or    │
+  │           │                                               │  refined?   │
+  ├───────────┼───────────────────────────────────────────────┼─────────────┤
+  │           │ This grill session's raw log, plus a 5-bullet │             │
+  │ Phase 1:  │  summary of the decisions it produced, the    │ Raw, as     │
+  │ Design    │ dead ends included (Spring ↔ manual wiring,   │ required    │
+  │           │ the "backtest trains the model" correction)   │             │
+  ├───────────┼───────────────────────────────────────────────┼─────────────┤
+  │ Phases    │ Each structured prompt you sent, its raw      │ Refined     │
+  │ 2–5:      │ session log, and a note (used as-is / edited  │ prompts,    │
+  │ Build     │ / rejected and why)                           │ real logs   │
+  └───────────┴───────────────────────────────────────────────┴─────────────┘
+
+  A reviewer reading top to bottom sees the messy exploration, then the
+  disciplined execution it led to.
+
+  Prompt template
+
+  ## Phase 3b — Forecast layer
+  **Context:** Read CLAUDE.md and docs/DESIGN.md. Domain layer exists (Print,
+  PrintHistory, ReferenceMonth, JobsChange).
+  **Goal:** Implement Forecaster strategy with NaiveForecaster and
+  AutoregressiveForecaster(p).
+  **Patterns (and why):**
+  - Strategy → Forecaster: models are interchangeable; CLI selects by name.
+  - Composite-ready → HistoryWindow.andThen(): windows combine without new
+  classes.
+  - Value Object → Forecast, Explanation (Java records, immutable).
+  **Constraints:** No Spring annotations in this package. Constructor injection
+  only. Use commons-math3 OLS.
+  **Open questions — argue before coding:**
+  1. With only two models, is a Forecaster interface over-engineering? Give the
+  strongest case against, then decide.
+  2. Should Explanation be model-specific (sealed interface) or one generic
+  contributions list?
+  **Acceptance:** Tests first. (a) AR recovers known coefficients on a synthetic
+  series; (b) explanation contributions sum exactly to the point forecast.
+  `make test` and `make lint` pass.
+  **Out of scope:** Moving average, ensembles, prediction intervals.
+
+  The "Open questions — argue before coding" block is the key part. It
+  reproduces what happened in this session (the AI challenging a choice before
+  building it) in a controlled form. It also shows you didn't apply patterns
+  blindly, which is the over-engineering conversation you wanted to keep.
+
+  Pattern map (goes in the repo's CLAUDE.md, so every phase follows it)
+
+  ┌─────────────┬──────────────┬──────────────────────────┬─────────────────┐
+  │    Area     │   Pattern    │          Where           │  Deliberately   │
+  │             │              │                          │    not used     │
+  ├─────────────┼──────────────┼──────────────────────────┼─────────────────┤
+  │             │ Value        │ ReferenceMonth,          │                 │
+  │ Domain      │ Object,      │ JobsChange / Print       │                 │
+  │             │ Entity       │                          │                 │
+  ├─────────────┼──────────────┼──────────────────────────┼─────────────────┤
+  │ Data access │ Repository   │ PrintRepository →        │ Spring Data JPA │
+  │             │ (port)       │ JdbcPrintRepository      │                 │
+  ├─────────────┼──────────────┼──────────────────────────┼─────────────────┤
+  │ Data        │              │ PrintSource → CsvSource, │ Caching         │
+  │ sources     │ Adapter      │  FredSource              │ decorator (not  │
+  │             │              │                          │ needed yet)     │
+  ├─────────────┼──────────────┼──────────────────────────┼─────────────────┤
+  │ Forecasting │ Strategy     │ Forecaster → Naive,      │ Ensemble /      │
+  │             │              │ Autoregressive           │ Composite (cut) │
+  ├─────────────┼──────────────┼──────────────────────────┼─────────────────┤
+  │             │ Strategy +   │                          │ Specification   │
+  │ Windows     │ composition  │ HistoryWindow.andThen()  │ pattern (too    │
+  │             │              │                          │ heavy)          │
+  ├─────────────┼──────────────┼──────────────────────────┼─────────────────┤
+  │ Evaluation  │ Strategy     │ AccuracyMetric → MAE,    │ Template Method │
+  │             │              │ SkillVsNaive             │  backtester     │
+  ├─────────────┼──────────────┼──────────────────────────┼─────────────────┤
+  │             │              │                          │ Renderer        │
+  │ CLI         │ Command      │ picocli subcommands      │ interface (one  │
+  │             │              │                          │ format)         │
+  ├─────────────┼──────────────┼──────────────────────────┼─────────────────┤
+  │ Wiring      │ DI container │ Spring @Configuration,   │ Annotations in  │
+  │             │              │ edges only               │ the core        │
+  └─────────────┴──────────────┴──────────────────────────┴─────────────────┘
+
+  The "deliberately not used" column answers the over-engineering question
+  before a reviewer asks it.
+
+  Other suggestions
+
+  1. Commit per phase, with messages that reference the prompt ("Phase 3b:
+     forecast layer, see PROMPTS.md#3b"). The git history then matches the log.
+  2. Keep at least one real rejection in the notes, e.g. "AI proposed a Template
+     Method backtester; rejected, because composition was simpler." Reviewers
+     specifically look for evidence you overrode the AI.
+  3. Last prompt = self-review: "Review the repo against CLAUDE.md's pattern map
+     and the brief; list gaps." Include what you fixed afterwards.
+
+  ---
+
+  Final question: where should I write the outputs? I'd produce three files:
+
+  - docs/DESIGN.md: the decision log from Q2–Q12
+  - CLAUDE.md: architecture rules and the pattern map
+  - docs/PROMPTS-PLAN.md: the full prompt pack (Phases 2–5, one structured
+    prompt each, with open questions)
+
+  My suggestion is a new personal repo directory, for example
+  ~/dev/adp-forecast/ (not inside a work repo), initialized with git init.
+  Should I create it there, or do you have a different location in mind?
+
+✻ Churned for 28s · done 3:16 AM
+
+❯ let's keep it at ~/dev/adp-forecast/. And we can upload it to git later,
+  cause I would be using a different account.
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● Write(adp-forecast/docs/DESIGN.md)
+  ⎿  Wrote 195 lines to adp-forecast/docs/DESIGN.md
+       1 # ADP Forecast — Design
+       2
+       3 Decision log from the design session (Phase 1). Each entry: what
+       4
+       5 ## Problem
+       6
+       7 A CLI that tracks the monthly ADP National Employment Report and
+       8
+       9 1. See historical numbers
+      10 2. See the prediction for next month
+     … +262 lines (ctrl+o to expand)
+
+● Write(adp-forecast/CLAUDE.md)
+  ⎿  Wrote 50 lines to adp-forecast/CLAUDE.md
+       1 # ADP Forecast — rules for AI sessions
+       2
+         are settled; if a change would contradict
+       4 one, stop and say so instead of working around it.
+       5
+       7
+       8 - Ports and adapters. Dependencies point inward: `cli`, `adapter
+         `, `config` → `evaluation`, `forecast` → `domain`.
+         `evaluation/`, `port/`.** Plain Java, constructor
+      10   injection only. Spring lives in `config/`, `adapter/`, `cli/`.
+     … +59 lines (ctrl+o to expand)
+
+● Write(adp-forecast/docs/PROMPTS-PLAN.md)
+  ⎿  Wrote 217 lines to adp-forecast/docs/PROMPTS-PLAN.md
+       1 # Build prompt pack
+       3 Structured prompts distilled from the Phase 1 design session (`d
+         ocs/DESIGN.md`). Run each one in its own
+         TS.md`: the prompt as sent (including any
+       5 edits), the raw session log, and a note on what you used, edited
+       6
+       7 Every prompt has the same shape:
+         ions — argue before coding · Acceptance · Out of scope**
+       9
+          the design before building it, and you
+     … +278 lines (ctrl+o to expand)
+
+  Listed 1 directory, wrote 1 memory (ctrl+o to expand)
+
+● The design is written up as three files in a new local repo at
+  ~/dev/adp-forecast/. There's no code yet, so nothing to build, lint or test.
+
+  - docs/DESIGN.md is the decision log from our session: each decision with its
+    reasoning and what was cut. It also records the dead ends you can keep for
+    the review: the Spring vs. manual wiring back-and-forth, and the "backtest
+    trains the model" correction.
+  - CLAUDE.md holds the architecture rules, including no Spring annotations in
+    domain/, forecast/ or evaluation/. It also has the design-pattern table with
+    a "deliberately not used" column, which answers the over-engineering
+    question in advance. Every build session reads it first.
+  - docs/PROMPTS-PLAN.md has nine build prompts, P0 to P8: scaffold, domain,
+    data sources and storage, forecasting, accuracy testing, the CLI, the data
+    snapshot plus README, the extension demo, and a final self-review. Each one
+    says which pattern to use and why, and includes "open questions — argue
+    before coding", like the Spring debate.
+
+  I ran git init but made no commits and added no remote, since you'll push from
+  a different account.
+
+  Things to do before P0:
+  1. Export this session's log now. It's the raw Phase 1 entry for PROMPTS.md.
+     Skim it for unrelated work context before committing it.
+  2. Set a repo-local git identity so your work identity doesn't end up on these
+     commits:
+  git -C ~/dev/adp-forecast config user.name "<your name>"
+  git -C ~/dev/adp-forecast config user.email "<personal email>"
+  3. Get a free FRED API key before P2 and P6. P2 checks how far back FRED keeps
+     past versions of the ADP numbers, which is the biggest open risk. If that
+     history is short, the plan falls back to scoring against the latest revised
+     numbers and saying so in the README.
+
+  Start each phase in a fresh Claude Code session from ~/dev/adp-forecast,
+  beginning with P0.
+
+  I also saved a memory note so later sessions know this is a personal project
+  kept separate from work.
+
+✻ Crunched for 1m 51s · done 3:23 AM
