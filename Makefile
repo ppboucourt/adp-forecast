@@ -31,6 +31,8 @@ format: build-image
 		sh -c '$(GRADLE) spotlessApply && chown -R $(shell id -u):$(shell id -g) src'
 
 ## Maintainer only: pull every vintage from FRED and rewrite data/adp_vintages.csv.
-refresh-snapshot:
+## Runs as the host user with a throwaway DB so the CSV isn't root-owned.
+refresh-snapshot: image
 	@test -n "$(FRED_API_KEY)" || { echo "FRED_API_KEY is not set" >&2; exit 1; }
-	@echo "refresh-snapshot: FredSource is not implemented yet" >&2; exit 1
+	docker run --rm -u $(shell id -u):$(shell id -g) -e ADP_DATA_DIR=/tmp -e FRED_API_KEY \
+		-v $(CURDIR)/data:/out $(IMAGE) sync --source fred --export /out/adp_vintages.csv

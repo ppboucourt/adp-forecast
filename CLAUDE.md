@@ -20,7 +20,7 @@ one, stop and say so instead of working around it.
 |---|---|---|---|
 | Domain | Value Object | `ReferenceMonth`, `JobsChange`, `Observation`; `PrintHistory.vintagesOf()` for revision trails | `Print` entity |
 | Data access | Repository (port) | `PrintRepository` → `JdbcPrintRepository` | Spring Data JPA |
-| Data sources | Adapter | `PrintSource` → `CsvSource`, `FredSource` | Caching decorator |
+| Data sources | Adapter | `PrintSource` → `CsvSource`, `FredSource`; `SnapshotWriter` → `CsvSnapshotWriter` (one shared `CsvFormat`) | Caching decorator |
 | Forecasting | Strategy | `Forecaster` → `NaiveForecaster`, `AutoregressiveForecaster` | Ensemble / Composite |
 | Windows | Strategy + composition | `HistoryWindow.andThen()` | Specification pattern |
 | Evaluation | Strategy | `AccuracyMetric` → `MeanAbsoluteError`, `SkillVsNaive` | Template Method backtester |

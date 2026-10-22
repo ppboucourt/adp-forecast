@@ -11,5 +11,6 @@ RUN ./gradlew --no-daemon --quiet bootJar
 FROM eclipse-temurin:25-jre
 WORKDIR /app
 COPY --from=build /workspace/build/libs/adp-forecast.jar app.jar
+COPY data data
 VOLUME /data
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

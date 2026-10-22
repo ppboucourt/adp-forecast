@@ -28,6 +28,7 @@ dependencies {
     implementation("info.picocli:picocli-spring-boot-starter:4.7.7")
     implementation("org.xerial:sqlite-jdbc:3.53.4.0")
     implementation("org.apache.commons:commons-math3:3.6.1")
+    implementation("tools.jackson.core:jackson-databind")
     annotationProcessor("org.springframework.boot:spring-boot-configuration-processor")
 
     testImplementation("org.springframework.boot:spring-boot-starter-test")
@@ -41,6 +42,10 @@ tasks.test {
 
 tasks.bootJar {
     archiveFileName = "adp-forecast.jar"
+    // sqlite-jdbc loads a native library; without this JDK 25 warns on every run.
+    manifest {
+        attributes("Enable-Native-Access" to "ALL-UNNAMED")
+    }
 }
 
 // Only the executable jar is needed.

@@ -49,9 +49,26 @@ can't live on a single month; `PrintHistory` owns it and `vintagesOf` covers the
 
 **Cut:** extra predictors (BLS NFP, jobless claims). Listed under "next week".
 
-**To verify during build:** how far back ALFRED vintages go for this series, and the effect of ADP's 2022
-methodology relaunch on older vintages. If vintages don't cover the full window, fall back to a
-latest-vintage backtest and disclose the bias.
+**Verified during build (P2):**
+
+- ALFRED vintages for `ADPMNUSNERSA` start **2022-08-31**, the relaunch of the NER (new methodology built with
+  the Stanford Digital Economy Lab). Levels for 2010 – Jul 2022 first appear in that vintage as a backcast;
+  they never had a real-time first print. The pre-2022 ADP report was a different product (a forecast of
+  BLS) and is not spliced on.
+- Every February the annual QCEW reweighting restates the whole history back to 2010 (Feb 2026: level about
+  −2.5M). `asOf(V)` handles it: a January's first print reads the benchmarked December from the same vintage.
+- API: `fred/series/observations` with `realtime_start=1776-07-04`, `realtime_end=9999-12-31` (both default
+  to today), `output_type=1`. Each row's `realtime_start` is our `vintage_date`; rows appear only when a
+  value changes.
+
+**Backtest consequence:**
+
+- **Headline:** real-time first-print backtest, targets Sep 2022 onward (~49 to Sep 2026; an estimate until
+  `FredSource` runs against the live API), no look-ahead. The README states that its MAE carries about ±15%
+  sampling noise.
+- **Secondary, labelled biased:** latest-vintage backtest over 2011–2026 (revised, benchmarked data is both
+  the fit and the truth). Used for the window sensitivity check and the COVID scoring question, since the
+  real-time test window contains no COVID months.
 
 ### D3 — Java 25, Gradle, Spring Boot for DI only, Docker
 
@@ -119,8 +136,8 @@ interface HistoryWindow { PrintHistory apply(PrintHistory h); default HistoryWin
 domain/      ReferenceMonth, JobsChange, Observation, PrintHistory, Forecast, Explanation   (no I/O, no libs)
 forecast/    Forecaster, NaiveForecaster, AutoregressiveForecaster, HistoryWindow + impls
 evaluation/  Backtester, BacktestReport, AccuracyMetric, MeanAbsoluteError, SkillVsNaive
-port/        PrintSource, PrintRepository                       (interfaces owned by the core)
-adapter/     CsvSource, FredSource, JdbcPrintRepository          (all I/O)
+port/        PrintSource, PrintRepository, SnapshotWriter       (interfaces owned by the core)
+adapter/     CsvSource, CsvSnapshotWriter, FredSource, JdbcPrintRepository   (all I/O)
 cli/         picocli commands: history, forecast, backtest, sync + text rendering
 config/      Spring @Configuration — the only place concrete classes are chosen
 ```
