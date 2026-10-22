@@ -10,6 +10,7 @@ import adp.forecast.AutoregressiveForecaster;
 import adp.forecast.Excluding;
 import adp.forecast.Forecaster;
 import adp.forecast.HistoryWindow;
+import adp.forecast.MovingAverageForecaster;
 import adp.forecast.NaiveForecaster;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -24,7 +25,13 @@ final class Fixtures {
   static final Clock FRESH = at(LocalDate.of(2035, 1, 15));
 
   static final Map<String, Forecaster> FORECASTERS =
-      Map.of("ar", new AutoregressiveForecaster(3), "naive", new NaiveForecaster());
+      Map.of(
+          "ar",
+          new AutoregressiveForecaster(3),
+          "naive",
+          new NaiveForecaster(),
+          "ma",
+          new MovingAverageForecaster(3));
   static final Map<String, HistoryWindow> WINDOWS =
       Map.of(
           "all",

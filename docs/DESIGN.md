@@ -128,7 +128,8 @@ with M's **first print**.
 
 **Backtest mechanics (P4):**
 
-- One `Backtester(model, baseline, fitWindow, metrics)`; the baseline is injected (naive by default). Each
+- One `Backtester(model, baseline, fitWindow, metrics)`; the baseline is injected (naive by default,
+  `adp.baseline`; `backtest --baseline <model>` overrides it per run). Each
   scored month is a row `(target, firstPrint, modelPoint, baselinePoint)`; `AccuracyMetric` computes over rows.
 - **Targets:** M is a target if, the day before M's first release, the latest month held is M−1. Months first
   published together (the 2022 relaunch backcast) are never targets, so they don't count as skipped. A

@@ -38,6 +38,12 @@ public class BacktestCommand implements Callable<Integer> {
   String model;
 
   @Option(
+      names = "--baseline",
+      paramLabel = "<name>",
+      description = "Model that skill is measured against. Default: adp.baseline (naive).")
+  String baseline;
+
+  @Option(
       names = "--window",
       paramLabel = "<name>",
       description = "Fit window; repeat to compare. Default: all and exclude-covid.")
@@ -84,7 +90,8 @@ public class BacktestCommand implements Callable<Integer> {
   public Integer call() {
     var cli = spec.commandLine();
     Forecaster forecaster = Names.pick(forecasters, model, "model", cli);
-    Forecaster baseline = Names.pick(forecasters, baselineName, "model", cli);
+    Forecaster baselineModel =
+        Names.pick(forecasters, baseline == null ? baselineName : baseline, "model", cli);
     Basis selectedBasis = Names.pick(BASES, basis, "basis", "bases", cli);
     var scoring = new NamedWindow(scoringWindow, Names.pick(windows, scoringWindow, "window", cli));
     var names = fitWindows == null ? List.of("all", "exclude-covid") : fitWindows;
@@ -94,7 +101,7 @@ public class BacktestCommand implements Callable<Integer> {
                 name ->
                     new Backtester(
                         forecaster,
-                        baseline,
+                        baselineModel,
                         new NamedWindow(name, Names.pick(windows, name, "window", cli)),
                         metrics))
             .toList();

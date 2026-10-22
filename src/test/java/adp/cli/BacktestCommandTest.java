@@ -47,6 +47,32 @@ class BacktestCommandTest {
   }
 
   @Test
+  void baselineOptionReplacesNaiveInTheHeaderAndTheSkill() {
+    var vsNaive = run("--window", "all").out().lines().toList();
+    var vsMa = run("--window", "all", "--baseline", "ma").out().lines().toList();
+
+    assertThat(vsMa.getFirst()).startsWith("AR(3) vs MA(3) · ");
+    // Same model, same months: MAE matches, skill differs because the baseline changed.
+    assertThat(vsMa.get(2).split(" +")[1]).isEqualTo(vsNaive.get(2).split(" +")[1]);
+    assertThat(vsMa.get(2).split(" +")[2]).isEqualTo(vsNaive.get(2).split(" +")[2]);
+    assertThat(vsMa.get(2).split(" +")[3]).isNotEqualTo(vsNaive.get(2).split(" +")[3]);
+  }
+
+  @Test
+  void baselineDefaultsToTheConfiguredOne() {
+    assertThat(run().out().lines().findFirst())
+        .hasValue("AR(3) vs naive · real-time first prints · scored on all");
+  }
+
+  @Test
+  void unknownBaselineListsTheValidModels() {
+    var cli = run("--baseline", "mean");
+
+    assertThat(cli.exitCode).isEqualTo(ExitCode.USAGE);
+    assertThat(cli.err()).contains("unknown model 'mean'; valid models: ar, ma, naive");
+  }
+
+  @Test
   void unknownBasisListsTheValidOnes() {
     var cli = run("--basis", "vintage");
 

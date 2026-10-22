@@ -46,7 +46,7 @@ class ForecastCommandTest {
     var window = run("--window", "rolling");
 
     assertThat(model.exitCode).isEqualTo(ExitCode.USAGE);
-    assertThat(model.err()).contains("unknown model 'prophet'; valid models: ar, naive");
+    assertThat(model.err()).contains("unknown model 'prophet'; valid models: ar, ma, naive");
     assertThat(window.exitCode).isEqualTo(ExitCode.USAGE);
     assertThat(window.err())
         .contains("unknown window 'rolling'; valid windows: all, exclude-covid");

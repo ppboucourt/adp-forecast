@@ -43,7 +43,7 @@ first prints over `n` months, and skill relative to the naive "same as last mont
 |---|---|
 | `history [--last N] [--first-print]` | Recent months: level and change; optionally first print and revision |
 | `forecast [--model ar\|naive\|ma] [--window all\|exclude-covid\|rolling-60] [--explain]` | Next month's forecast; defaults `ar`, `exclude-covid` |
-| `backtest [--model …] [--window …]… [--score …] [--basis real-time\|latest-vintage]` | Accuracy table, one row per fit window, all scored on the same months |
+| `backtest [--model …] [--baseline …] [--window …]… [--score …] [--basis real-time\|latest-vintage]` | Accuracy table, one row per fit window, all scored on the same months; skill is vs. `--baseline` (default `naive`) |
 | `sync [--source csv\|fred] [--export path]` | Load vintages into the local database (never overwrites a stored vintage) |
 
 Run any of them with `make run ARGS="…"`. Unknown model or window names list the valid ones. A warning
@@ -134,9 +134,12 @@ Snapshot retrieved 2026-10-22; newest vintage 2026-09-30.
 |---|---|---|---|
 | all | 49 | 61K | +0.08 |
 | exclude-covid (default) | 49 | 62K | +0.07 |
+| rolling-60 | 49 | 66K | −0.00 |
 | *naive baseline* | 49 | 66K | — |
 
-No targets were skipped.
+No targets were skipped. `rolling-60` (the last five years only, added in P7 with its length fixed before
+this run) is the weakest fit window, 4–5K behind the others: still inside the noise band, and consistent
+with the bias–variance trade-off in DESIGN.md D6 (fewer rows, noisier coefficients).
 
 **Does AR(3) beat naive?** Nominally, by 7–8% of MAE; under rule 2 that is **no measurable difference**.
 AR is not merely its intercept: it puts a weight of 0.71 on last month's change, so it behaves like a
@@ -178,8 +181,30 @@ best reported separately.
 
 ### AR vs. a moving-average baseline
 
-*Pending P7.* The baseline is injectable, so once `MovingAverageForecaster` exists this section will report
-AR's skill against it. That answers directly whether AR adds anything beyond a smoothed level.
+`ma` is MA(3): the same three lags AR uses, equally weighted, nothing fitted. Measuring AR against it asks
+whether fitting the weights and an intercept beats plain averaging of the same information.
+
+```
+make run ARGS="backtest --baseline ma"     # AR(3) scored against MA(3)
+make run ARGS="backtest --model ma"        # MA(3) scored against naive
+```
+
+| comparison (real-time, n=49) | fit window | MAE | skill |
+|---|---|---|---|
+| AR(3) vs MA(3) | all | 61K vs 59K | −0.03 |
+| AR(3) vs MA(3) | exclude-covid | 62K vs 59K | −0.04 |
+| MA(3) vs naive | either | 59K vs 66K | +0.11 |
+
+**AR vs. MA: no measurable difference**, and nominally MA is slightly better. Fitting the weights and the
+intercept buys nothing over averaging the last three prints. This sharpens the AR-vs-naive finding: what
+helps against naive is smoothing the last few prints, not the regression. AR stays the default because it
+was chosen before these results (rule 1's logic applies to models too) and because its explanation shows
+*why* (the weights and the pull toward a long-run level); this table is the evidence a user needs to
+discount it.
+
+**MA vs. naive** sits at +0.11, right at the edge of the ~0.1 band: too close to call with the heuristic,
+which is exactly the case the Diebold–Mariano test under "Next week" would settle. Whether AR is more than
+its intercept specifically needs the constant-mean baseline, also listed there.
 
 ## Next week
 
